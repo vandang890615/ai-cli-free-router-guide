@@ -1,6 +1,6 @@
 # Facebook Post
 
-Minh vua tong hop mot guide cho anh em dev muon test cac AI coding CLI voi free-tier token:
+Minh vua dung Codex de ho tro test va tao mot guide cho anh em dev muon test cac AI coding CLI voi free-tier token:
 
 Repo: https://github.com/vandang890615/ai-cli-free-router-guide
 
@@ -23,9 +23,16 @@ Stack minh thay dang test nhat:
 3. Qwen Code + NVIDIA NIM de test truc tiep model coding free-tier
 4. OpenCode/Aider/Crush + OpenRouter hoac FreeLLMAPI
 
-Guide co kem diagram, file `.env.example`, bang so sanh, cac lenh PowerShell va phan loi thuong gap.
+Guide co kem diagram, file `.env.example`, bang so sanh, cac lenh PowerShell va phan loi thuong gap. Day la ket qua test nhanh tren may Windows thuc te, khong phai benchmark chuan cong nghiep.
 
-Neu anh em cung dang test AI coding CLI, co the fork, gop y hoac mo issue de bo sung provider/router moi.
+Minh muon repo nay thanh tai lieu cong dong. Neu anh em da tung test cac tool/provider/router ma bai viet chua co, hoac co kinh nghiem hay hon, hay fork, mo issue hoac gui pull request.
+
+Minh dac biet muon nhan them:
+
+- Cau hinh da chay that voi OpenRouter, NVIDIA NIM, Gemini, local model
+- Model nao tool-calling on dinh cho coding agent
+- Loi thuong gap khi dung Codex CLI, Claude Code, Qwen Code, OpenCode, Aider, Crush
+- Router/proxy hay hon nhu 9Router, LiteLLM, CLIProxyAPI, custom adapter
+- Benchmark tren repo thuc te
 
 Quan trong: dung free tier thi nen doc ToS tung provider, chi chay local/private, khong public proxy va khong commit API key.
-

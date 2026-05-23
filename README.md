@@ -6,6 +6,21 @@ Huong dan thuc dung de test va dung nhieu AI coding CLI voi cac provider co free
 
 > Muc tieu: tan dung free token mot cach co kiem soat, khong paste API key vao chat, GitHub issue, README, commit hay log public.
 
+## About This Guide
+
+Bai viet nay duoc tao trong qua trinh dung Codex de test nhanh cac AI coding CLI, router va provider tren mot may Windows thuc te. Mot so ket qua la smoke test va benchmark nho, khong phai benchmark chuan cong nghiep.
+
+Muc tieu cua repo la mo ra mot tai lieu cong dong: neu ban da tung test Claude Code, Codex CLI, Qwen Code, OpenCode, Aider, Crush, 9Router, FreeLLMAPI, free-claude-code, LiteLLM, OpenRouter, NVIDIA NIM, Gemini hoac cac provider/router khac, hay mo issue hoac pull request de bo sung kinh nghiem.
+
+Nhung dong gop huu ich nhat:
+
+- Cau hinh da test chay that.
+- Model nao co tool-calling on dinh.
+- Loi thuong gap va cach sua.
+- Provider nao bi rate limit, timeout, hoac khong hop voi agent CLI.
+- Router/proxy moi ma guide chua co.
+- Ket qua benchmark tren repo/codebase thuc te.
+
 ## Tool Map
 
 ```mermaid
