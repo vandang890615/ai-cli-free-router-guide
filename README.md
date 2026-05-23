@@ -247,6 +247,29 @@ http://localhost:5173
 
 Thêm provider keys trong dashboard, sau đó copy unified key được tạo ra. Dùng key đó như OpenAI-compatible API key cho các client.
 
+Chỉ dán raw key vào dashboard, không dán cả lệnh PowerShell. Ví dụ đúng là `sk-or-v1-...`, `nvapi-...`, `AIza...`; ví dụ sai là `$env:OPENROUTER_API_KEY="sk-or-v1-..."`.
+
+Smoke test trực tiếp router:
+
+```powershell
+$env:FREELLMAPI_API_KEY="freellmapi-REPLACE_ME"
+
+$body = @{
+  model = "auto"
+  messages = @(@{ role = "user"; content = "Reply with exactly OK." })
+  temperature = 0
+  max_tokens = 80
+} | ConvertTo-Json -Depth 10
+
+Invoke-WebRequest `
+  -Uri "http://127.0.0.1:3001/v1/chat/completions" `
+  -Method Post `
+  -Headers @{ Authorization = "Bearer $env:FREELLMAPI_API_KEY"; "Content-Type" = "application/json" } `
+  -Body $body
+```
+
+Với smoke test router, tiêu chí chính là HTTP `200` và header `X-Routed-Via` cho biết provider/model đã serve request. Nội dung có thể không đúng chính xác `OK` nếu router chọn model reasoning hoặc model free đang bị fallback.
+
 ## 4. Qwen Code
 
 NVIDIA NIM trực tiếp:
@@ -275,9 +298,49 @@ npx --yes @qwen-code/qwen-code `
   --prompt "Fix the failing tests and run npm test."
 ```
 
+Ghi chú test thực tế: Qwen Code `0.16.0` gửi `messages[].content` dạng OpenAI content-parts array. FreeLLMAPI hiện chỉ nhận string content trong `/v1/chat/completions`, nên đường `Qwen Code -> FreeLLMAPI` có thể fail với `400 Invalid request: Invalid input`. Đường `Qwen Code -> NVIDIA NIM direct` đã smoke test OK với model `qwen/qwen3-coder-480b-a35b-instruct`.
+
 ## 5. OpenCode
 
-OpenRouter native:
+OpenCode dùng model id theo provider đã cấu hình. Nếu dùng FreeLLMAPI local, thêm provider vào `C:\Users\ADMIN\.config\opencode\opencode.json`:
+
+```json
+{
+  "provider": {
+    "freellmapi": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:3001/v1",
+        "apiKey": "freellmapi-REPLACE_ME"
+      },
+      "models": {
+        "gemini-2.5-flash": {
+          "name": "Gemini 2.5 Flash via FreeLLMAPI"
+        }
+      }
+    }
+  }
+}
+```
+
+Test:
+
+```powershell
+npx --yes opencode-ai models freellmapi --verbose
+
+npx --yes opencode-ai run `
+  --format json `
+  --model "freellmapi/gemini-2.5-flash" `
+  -- "Reply with exactly OK."
+```
+
+Nếu output terminal chỉ hiện event JSON hoặc dòng trạng thái, export session để xem phần trả lời:
+
+```powershell
+npx --yes opencode-ai export SESSION_ID
+```
+
+OpenRouter native chỉ chạy nếu provider/model đã được OpenCode nhận trong `opencode-ai models`:
 
 ```powershell
 $env:OPENROUTER_API_KEY="REPLACE_ME"
@@ -288,25 +351,25 @@ npx --yes opencode-ai run `
   -- "Reply with exactly OK."
 ```
 
-Nếu model free của OpenRouter bị timeout hoặc rate-limit, hãy đổi model hoặc dùng fallback routing của FreeLLMAPI.
+Ghi chú test thực tế: model free của OpenRouter có thể trả `429 rate-limited`. Với FreeLLMAPI, tránh `auto` khi cần smoke test ổn định; dùng model cụ thể như `freellmapi/gemini-2.5-flash`.
 
 ## 6. Aider
 
-Cài thật trên Windows:
+Cài thật trên Windows. Nếu máy có Python 3.12, dùng `uv` để tránh pip chọn bản Aider cũ trên Python 3.14:
 
 ```powershell
-py -m pip install aider-chat
+uv tool install --force --python 3.12 --with pip aider-chat@latest
 aider --version
 ```
 
-Nếu PowerShell không nhận `aider` sau khi cài, kiểm tra nơi pip đặt script:
+Nếu không dùng `uv`, thử pip với Python 3.12:
 
 ```powershell
-py -m pip show aider-chat
-py -m site --user-base
+py -3.12 -m pip install --user aider-chat
+aider --version
 ```
 
-Sau đó mở terminal mới hoặc thêm thư mục `Scripts` tương ứng vào `PATH`.
+Ghi chú test thực tế: `py -m pip install aider-chat` trên Python 3.14 có thể chỉ thấy `aider-chat 0.16.0` và fail build dependency. Dùng Python 3.12/`uv` đã cài được Aider `0.86.2`.
 
 OpenRouter smoke test:
 
@@ -330,7 +393,7 @@ $env:OPENAI_API_BASE="http://127.0.0.1:3001/v1"
 aider --model openai/auto
 ```
 
-Ghi chú: FreeLLMAPI phải đang chạy ở `http://127.0.0.1:3001` và unified key phải được tạo trong dashboard trước. OpenRouter cần key thật có quyền gọi model đã chọn; model free có thể bị rate limit hoặc timeout.
+Ghi chú: FreeLLMAPI phải đang chạy ở `http://127.0.0.1:3001` và unified key phải được tạo trong dashboard trước. OpenRouter cần key thật có quyền gọi model đã chọn; model free có thể bị rate limit hoặc timeout. Aider qua FreeLLMAPI đã smoke test OK với `openai/auto`.
 
 ## 7. Crush
 
@@ -341,6 +404,8 @@ npx --yes @charmland/crush --help
 ```
 
 Crush hữu ích khi bạn muốn terminal UI đẹp và setup nhiều provider. Hãy cấu hình Crush với provider hỗ trợ model và tool-calling phù hợp với workflow của bạn.
+
+Ghi chú test thực tế: trỏ Crush vào FreeLLMAPI bằng `OPENAI_API_KEY` và `OPENAI_API_ENDPOINT=http://127.0.0.1:3001/v1` chưa chạy được vì Crush gọi `/v1/responses`, còn FreeLLMAPI hiện chỉ expose `/v1/chat/completions`. Cần provider có Responses API hoặc adapter Responses -> chat-completions.
 
 ## 8. Codex CLI Notes
 
