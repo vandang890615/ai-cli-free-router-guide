@@ -14,7 +14,7 @@ Nội dung chính:
 
 Lý do mình viết:
 
-Rất nhiều tool CLI coding hiện nay rất mạnh, nhưng chi phí token và billing mới là vấn đề khi dùng hằng ngày. Cách hợp lý hơn là tách CLI ra khỏi provider, dùng router/proxy để đổi provider tùy quota, model, tốc độ và khả năng tool-calling.
+Rất nhiều tool CLI coding hiện nay rất mạnh, nhưng khi test nhiều model/provider thì cần hiểu rõ billing, quota và giới hạn sử dụng. Cách hợp lý hơn cho mục đích học tập và thử nghiệm cá nhân là tách CLI ra khỏi provider, dùng router/proxy local để đổi provider tùy quota, model, tốc độ và khả năng tool-calling.
 
 Stack mình thấy đáng test nhất:
 
@@ -35,4 +35,4 @@ Mình đặc biệt muốn nhận thêm:
 - Router/proxy hay hơn như 9Router, LiteLLM, CLIProxyAPI, custom adapter
 - Benchmark trên repo thực tế
 
-Quan trọng: dùng free tier thì nên đọc ToS từng provider, chỉ chạy local/private, không public proxy và không commit API key.
+Quan trọng: bài này không khuyến khích né billing, vượt rate limit, tạo nhiều tài khoản để lạm dụng free tier, share key hay public proxy. Dùng free tier thì nên đọc ToS từng provider, chỉ chạy local/private, không dùng như production backend và không commit API key.
