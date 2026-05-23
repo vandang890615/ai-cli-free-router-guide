@@ -1,38 +1,38 @@
-# Facebook Post
+# Bài Đăng Facebook
 
-Minh vua dung Codex de ho tro test va tao mot guide cho anh em dev muon test cac AI coding CLI voi free-tier token:
+Mình vừa dùng Codex để hỗ trợ test và tạo một guide cho anh em dev muốn thử các AI coding CLI với free-tier token:
 
 Repo: https://github.com/vandang890615/ai-cli-free-router-guide
 
-Noi dung chinh:
+Nội dung chính:
 
-- Claude Code + free-claude-code de route qua NVIDIA NIM, OpenRouter hoac local model
-- FreeLLMAPI de gom Google Gemini, NVIDIA, OpenRouter, GitHub Models... vao mot endpoint OpenAI-compatible
-- Qwen Code, OpenCode, Aider, Crush dung voi custom base URL
-- Luu y rieng cho Codex CLI: ban moi thuong can Responses API, khong phai router nao co `/v1/chat/completions` cung dung truc tiep duoc
-- Checklist bao mat API key: khong paste key vao chat, README, issue, log hay screenshot
+- Claude Code + free-claude-code để route qua NVIDIA NIM, OpenRouter hoặc local model
+- FreeLLMAPI để gom Google Gemini, NVIDIA, OpenRouter, GitHub Models... vào một endpoint OpenAI-compatible
+- Qwen Code, OpenCode, Aider, Crush dùng với custom base URL
+- Lưu ý riêng cho Codex CLI: bản mới thường cần Responses API, không phải router nào có `/v1/chat/completions` cũng dùng trực tiếp được
+- Checklist bảo mật API key: không paste key vào chat, README, issue, log hay screenshot
 
-Ly do minh viet:
+Lý do mình viết:
 
-Rat nhieu tool CLI coding hien nay rat manh, nhung chi phi token va billing moi la van de khi dung hang ngay. Cach hop ly hon la tach CLI ra khoi provider, dung router/proxy de chuyen provider tuy quota, model, toc do va kha nang tool-calling.
+Rất nhiều tool CLI coding hiện nay rất mạnh, nhưng chi phí token và billing mới là vấn đề khi dùng hằng ngày. Cách hợp lý hơn là tách CLI ra khỏi provider, dùng router/proxy để đổi provider tùy quota, model, tốc độ và khả năng tool-calling.
 
-Stack minh thay dang test nhat:
+Stack mình thấy đáng test nhất:
 
 1. Claude Code + free-claude-code cho workflow Claude-style
-2. FreeLLMAPI cho cac CLI ho tro OpenAI-compatible endpoint
-3. Qwen Code + NVIDIA NIM de test truc tiep model coding free-tier
-4. OpenCode/Aider/Crush + OpenRouter hoac FreeLLMAPI
+2. FreeLLMAPI cho các CLI hỗ trợ OpenAI-compatible endpoint
+3. Qwen Code + NVIDIA NIM để test trực tiếp model coding free-tier
+4. OpenCode/Aider/Crush + OpenRouter hoặc FreeLLMAPI
 
-Guide co kem diagram, file `.env.example`, bang so sanh, cac lenh PowerShell va phan loi thuong gap. Day la ket qua test nhanh tren may Windows thuc te, khong phai benchmark chuan cong nghiep.
+Guide có kèm diagram, file `.env.example`, bảng so sánh, các lệnh PowerShell và phần lỗi thường gặp. Đây là kết quả test nhanh trên máy Windows thực tế, không phải benchmark chuẩn công nghiệp.
 
-Minh muon repo nay thanh tai lieu cong dong. Neu anh em da tung test cac tool/provider/router ma bai viet chua co, hoac co kinh nghiem hay hon, hay fork, mo issue hoac gui pull request.
+Mình muốn repo này thành tài liệu cộng đồng. Nếu anh em đã từng test các tool/provider/router mà bài viết chưa có, hoặc có kinh nghiệm hay hơn, hãy fork, mở issue hoặc gửi pull request.
 
-Minh dac biet muon nhan them:
+Mình đặc biệt muốn nhận thêm:
 
-- Cau hinh da chay that voi OpenRouter, NVIDIA NIM, Gemini, local model
-- Model nao tool-calling on dinh cho coding agent
-- Loi thuong gap khi dung Codex CLI, Claude Code, Qwen Code, OpenCode, Aider, Crush
-- Router/proxy hay hon nhu 9Router, LiteLLM, CLIProxyAPI, custom adapter
-- Benchmark tren repo thuc te
+- Cấu hình đã chạy thật với OpenRouter, NVIDIA NIM, Gemini, local model
+- Model nào tool-calling ổn định cho coding agent
+- Lỗi thường gặp khi dùng Codex CLI, Claude Code, Qwen Code, OpenCode, Aider, Crush
+- Router/proxy hay hơn như 9Router, LiteLLM, CLIProxyAPI, custom adapter
+- Benchmark trên repo thực tế
 
-Quan trong: dung free tier thi nen doc ToS tung provider, chi chay local/private, khong public proxy va khong commit API key.
+Quan trọng: dùng free tier thì nên đọc ToS từng provider, chỉ chạy local/private, không public proxy và không commit API key.
