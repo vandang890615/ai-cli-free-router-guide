@@ -2,24 +2,24 @@
 
 ![AI Coding CLI Free Router Guide](assets/hero.svg)
 
-Huong dan thuc dung de test va dung nhieu AI coding CLI voi cac provider co free tier nhu OpenRouter, NVIDIA NIM, Google Gemini va cac router/proxy local.
+Hướng dẫn thực dụng để test và dùng nhiều AI coding CLI với các provider có free tier như OpenRouter, NVIDIA NIM, Google Gemini và các router/proxy local.
 
-> Muc tieu: tan dung free token mot cach co kiem soat, khong paste API key vao chat, GitHub issue, README, commit hay log public.
+> Mục tiêu: tận dụng free token một cách có kiểm soát, không paste API key vào chat, GitHub issue, README, commit hay log public.
 
-## About This Guide
+## Về Bài Viết
 
-Bai viet nay duoc tao trong qua trinh dung Codex de test nhanh cac AI coding CLI, router va provider tren mot may Windows thuc te. Mot so ket qua la smoke test va benchmark nho, khong phai benchmark chuan cong nghiep.
+Bài viết này được tạo trong quá trình dùng Codex để test nhanh các AI coding CLI, router và provider trên một máy Windows thực tế. Một số kết quả là smoke test và benchmark nhỏ, không phải benchmark chuẩn công nghiệp.
 
-Muc tieu cua repo la mo ra mot tai lieu cong dong: neu ban da tung test Claude Code, Codex CLI, Qwen Code, OpenCode, Aider, Crush, 9Router, FreeLLMAPI, free-claude-code, LiteLLM, OpenRouter, NVIDIA NIM, Gemini hoac cac provider/router khac, hay mo issue hoac pull request de bo sung kinh nghiem.
+Mục tiêu của repo là mở ra một tài liệu cộng đồng: nếu bạn đã từng test Claude Code, Codex CLI, Qwen Code, OpenCode, Aider, Crush, 9Router, FreeLLMAPI, free-claude-code, LiteLLM, OpenRouter, NVIDIA NIM, Gemini hoặc các provider/router khác, hãy mở issue hoặc pull request để bổ sung kinh nghiệm.
 
-Nhung dong gop huu ich nhat:
+Những đóng góp hữu ích nhất:
 
-- Cau hinh da test chay that.
-- Model nao co tool-calling on dinh.
-- Loi thuong gap va cach sua.
-- Provider nao bi rate limit, timeout, hoac khong hop voi agent CLI.
-- Router/proxy moi ma guide chua co.
-- Ket qua benchmark tren repo/codebase thuc te.
+- Cấu hình đã test chạy thật.
+- Model nào có tool-calling ổn định.
+- Lỗi thường gặp và cách sửa.
+- Provider nào bị rate limit, timeout, hoặc không hợp với agent CLI.
+- Router/proxy mới mà guide chưa có.
+- Kết quả benchmark trên repo/codebase thực tế.
 
 ## Tool Map
 
@@ -60,25 +60,25 @@ flowchart LR
   Resp -. "May translate to chat-completions" .-> FLA
 ```
 
-## Quick Pick
+## Chọn Nhanh
 
-| Goal | Recommended Stack | Why |
+| Mục Tiêu | Stack Đề Xuất | Lý Do |
 | --- | --- | --- |
-| Claude Code with free/cheap providers | Claude Code + free-claude-code | Claude Code expects Anthropic Messages API; this proxy translates to NIM/OpenRouter/local models. |
-| Many free-tier keys behind one endpoint | FreeLLMAPI | One local OpenAI-compatible `/v1/chat/completions` endpoint with fallback routing. |
-| Direct NVIDIA NIM smoke test | Qwen Code + NVIDIA NIM | Qwen Code supports `--openai-base-url` directly. |
-| OpenRouter-first workflow | OpenCode or Aider + OpenRouter | Both are practical for OpenAI-compatible provider workflows. |
-| Codex CLI custom providers | Use only providers/adapters with Responses API | Recent Codex CLI builds prefer `/v1/responses`; plain chat-completions routers may fail. |
+| Claude Code với provider miễn phí/rẻ | Claude Code + free-claude-code | Claude Code cần Anthropic Messages API; proxy này dịch request sang NIM/OpenRouter/local models. |
+| Gom nhiều free-tier key sau một endpoint | FreeLLMAPI | Một endpoint local OpenAI-compatible `/v1/chat/completions` có fallback routing. |
+| Smoke test NVIDIA NIM trực tiếp | Qwen Code + NVIDIA NIM | Qwen Code hỗ trợ trực tiếp `--openai-base-url`. |
+| Workflow ưu tiên OpenRouter | OpenCode hoặc Aider + OpenRouter | Cả hai hợp với provider OpenAI-compatible. |
+| Codex CLI custom providers | Chỉ dùng provider/adapter có Responses API | Codex CLI bản mới thường ưu tiên `/v1/responses`; router chỉ có chat-completions có thể fail. |
 
-## Security First
+## Bảo Mật Trước
 
-Never paste real API keys into:
+Không paste API key thật vào:
 
 - GitHub README, issue, pull request, gist, screenshot, terminal recording, or blog post.
 - Chat transcripts or AI assistant messages.
 - `.env.example`, `config.toml`, shell history examples, or benchmark logs.
 
-Use environment variables locally:
+Dùng environment variables ở máy local:
 
 ```powershell
 $env:OPENROUTER_API_KEY="sk-or-v1-REPLACE_ME"
@@ -87,19 +87,19 @@ $env:GEMINI_API_KEY="AIzaSyREPLACE_ME"
 $env:ANTHROPIC_API_KEY="REPLACE_ME"
 ```
 
-If a key was pasted into a chat, terminal log, Git commit, or public issue, treat it as leaked and rotate it.
+Nếu một key đã bị paste vào chat, terminal log, Git commit hoặc public issue, hãy xem như key đã lộ và rotate lại.
 
-## Prerequisites
+## Chuẩn Bị
 
-- Windows PowerShell examples are used below.
+- Các ví dụ bên dưới dùng Windows PowerShell.
 - Node.js 20+ for FreeLLMAPI, Qwen Code, OpenCode, Crush.
 - Python 3.14+ and `uv` for free-claude-code local.
-- Claude Code installed if testing Claude workflows.
-- Git installed if cloning repositories.
+- Cài Claude Code nếu muốn test Claude workflows.
+- Cài Git nếu muốn clone repositories.
 
 ## 1. Claude Code via Remote Claude Proxy
 
-This is the fastest test path when you already have a compatible proxy URL and token.
+Đây là cách test nhanh nhất khi bạn đã có proxy URL và token tương thích.
 
 ```powershell
 $env:ANTHROPIC_API_KEY="REPLACE_ME"
@@ -109,7 +109,7 @@ $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1"
 claude --bare --print --no-session-persistence --model "claude-sonnet-4-6" -- "Reply with exactly OK."
 ```
 
-Run an agent task:
+Chạy một agent task:
 
 ```powershell
 claude --bare --print --no-session-persistence `
@@ -129,7 +129,7 @@ cd free-claude-code
 Copy-Item .env.example .env
 ```
 
-Edit `.env` locally:
+Sửa `.env` ở máy local:
 
 ```env
 NVIDIA_NIM_API_KEY="REPLACE_ME"
@@ -140,13 +140,13 @@ ANTHROPIC_AUTH_TOKEN="freecc"
 FCC_OPEN_BROWSER=false
 ```
 
-Start the local proxy:
+Start local proxy:
 
 ```powershell
 uv run uvicorn server:app --host 127.0.0.1 --port 8082
 ```
 
-Point Claude Code at it:
+Trỏ Claude Code vào proxy:
 
 ```powershell
 $env:ANTHROPIC_AUTH_TOKEN="freecc"
@@ -160,13 +160,13 @@ claude --model sonnet
 
 Repository: <https://github.com/tashfeenahmed/freellmapi>
 
-FreeLLMAPI exposes:
+FreeLLMAPI expose endpoint:
 
 ```text
 http://127.0.0.1:3001/v1/chat/completions
 ```
 
-Clone and install:
+Clone và cài dependency:
 
 ```powershell
 cd C:\Users\ADMIN\Desktop
@@ -176,36 +176,36 @@ npm install
 Copy-Item .env.example .env
 ```
 
-Generate an encryption key:
+Tạo encryption key:
 
 ```powershell
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Put the generated value into `.env`:
+Đưa giá trị vừa tạo vào `.env`:
 
 ```env
 ENCRYPTION_KEY=REPLACE_WITH_64_CHAR_HEX
 PORT=3001
 ```
 
-Run server and dashboard:
+Chạy server và dashboard:
 
 ```powershell
 npm run dev
 ```
 
-Open the dashboard:
+Mở dashboard:
 
 ```text
 http://localhost:5173
 ```
 
-Add provider keys in the dashboard, then copy the generated unified key. Use it as the OpenAI-compatible API key for clients.
+Thêm provider keys trong dashboard, sau đó copy unified key được tạo ra. Dùng key đó như OpenAI-compatible API key cho các client.
 
 ## 4. Qwen Code
 
-Direct NVIDIA NIM:
+NVIDIA NIM trực tiếp:
 
 ```powershell
 npx --yes @qwen-code/qwen-code `
@@ -218,7 +218,7 @@ npx --yes @qwen-code/qwen-code `
   --prompt "Reply with exactly OK."
 ```
 
-Via FreeLLMAPI:
+Thông qua FreeLLMAPI:
 
 ```powershell
 npx --yes @qwen-code/qwen-code `
@@ -244,7 +244,7 @@ npx --yes opencode-ai run `
   -- "Reply with exactly OK."
 ```
 
-If a free OpenRouter model times out or rate-limits, switch model or use FreeLLMAPI fallback routing.
+Nếu model free của OpenRouter bị timeout hoặc rate-limit, hãy đổi model hoặc dùng fallback routing của FreeLLMAPI.
 
 ## 6. Aider
 
@@ -276,38 +276,38 @@ Repository/package: <https://github.com/charmbracelet/crush>
 npx --yes @charmland/crush --help
 ```
 
-Crush is useful when you want a polished terminal UI and multi-provider setup. Configure it with a provider that supports your preferred model and tool-calling behavior.
+Crush hữu ích khi bạn muốn terminal UI đẹp và setup nhiều provider. Hãy cấu hình Crush với provider hỗ trợ model và tool-calling phù hợp với workflow của bạn.
 
 ## 8. Codex CLI Notes
 
-Recent Codex CLI versions can accept custom providers, but many builds prefer the OpenAI Responses API:
+Các bản Codex CLI gần đây có thể nhận custom provider, nhưng nhiều build ưu tiên OpenAI Responses API:
 
 ```text
 /v1/responses
 ```
 
-Most free routers expose only:
+Phần lớn free router chỉ expose:
 
 ```text
 /v1/chat/completions
 ```
 
-That means this may fail:
+Nghĩa là các cấu hình sau có thể fail:
 
 ```text
 Codex CLI -> NVIDIA NIM direct
 Codex CLI -> FreeLLMAPI direct
 ```
 
-Use Codex with:
+Dùng Codex với:
 
 - Native OpenAI/Codex login.
-- A provider/router that supports Responses API.
-- A protocol adapter that translates Responses API to chat-completions.
+- Provider/router có hỗ trợ Responses API.
+- Protocol adapter dịch Responses API sang chat-completions.
 
-## Benchmark Recipe
+## Công Thức Benchmark
 
-Use the same small repository and same prompt for every CLI:
+Dùng cùng một repo nhỏ và cùng một prompt cho mọi CLI:
 
 ```text
 In this repository, fix the failing tests by editing the implementation only.
@@ -315,26 +315,26 @@ Keep the public API unchanged.
 After editing, run the test command and report the result briefly.
 ```
 
-Score each run:
+Chấm điểm mỗi lần chạy:
 
-| Metric | What To Check |
+| Tiêu Chí | Cần Kiểm Tra |
 | --- | --- |
-| Pass/fail | Did tests pass after the agent finished? |
-| Intervention | Did you need to manually approve, restart, or fix the run? |
-| Diff quality | Did it make the minimal correct edit? |
-| Time | How long from prompt to passing tests? |
-| Cost | Which provider served the request? |
-| Tool compatibility | Did tool calls, shell commands, and edits work? |
+| Pass/fail | Test có pass sau khi agent chạy xong không? |
+| Can thiệp | Có phải approve, restart hoặc sửa tay không? |
+| Chất lượng diff | Agent có sửa đúng và tối thiểu không? |
+| Thời gian | Từ lúc prompt đến khi test pass mất bao lâu? |
+| Chi phí | Provider nào đã serve request? |
+| Tương thích tool | Tool calls, shell commands và file edits có hoạt động không? |
 
-## Known Failure Modes
+## Lỗi Thường Gặp
 
-| Symptom | Likely Cause | Fix |
+| Triệu Chứng | Nguyên Nhân Có Thể | Cách Sửa |
 | --- | --- | --- |
-| `429 Too Many Requests` | Free provider rate limit | Wait, switch model, or add more providers to the router. |
-| `/v1/responses` 404 | Chat-completions-only provider used with Codex | Use a Responses-compatible adapter/provider. |
-| Tool-call error | Model does not support the CLI's tool-calling pattern | Switch to a coding/tool-capable model. |
-| Proxy starts but no port opens | Dependency/runtime issue | Run foreground and inspect logs. |
-| Google key visible in URL logs | Gemini API key passed as query string | Avoid sharing logs; rotate exposed keys. |
+| `429 Too Many Requests` | Provider free-tier bị rate limit | Chờ, đổi model, hoặc thêm provider vào router. |
+| `/v1/responses` 404 | Dùng provider chỉ có chat-completions với Codex | Dùng adapter/provider tương thích Responses API. |
+| Tool-call error | Model không hỗ trợ pattern tool-calling của CLI | Đổi sang model có khả năng coding/tool-use tốt hơn. |
+| Proxy start nhưng không mở port | Lỗi dependency/runtime | Chạy foreground và đọc log. |
+| Google key xuất hiện trong URL logs | Gemini API key được truyền qua query string | Không chia sẻ log; rotate key đã lộ. |
 
 ## References
 
@@ -347,6 +347,6 @@ Score each run:
 - Crush: <https://github.com/charmbracelet/crush>
 - Aider: <https://aider.chat>
 
-## Disclaimer
+## Lưu Ý
 
-Free tiers are for experimentation and personal development. Read each provider's terms. Do not resell keys, share your local proxy publicly, or treat free-tier routing as production infrastructure.
+Free tier phù hợp cho thử nghiệm và phát triển cá nhân. Hãy đọc điều khoản của từng provider. Không bán lại key, không public local proxy, và không xem free-tier routing là hạ tầng production.
