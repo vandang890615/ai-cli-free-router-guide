@@ -107,9 +107,39 @@ Nếu một key đã bị paste vào chat, terminal log, Git commit hoặc publi
 
 - Các ví dụ bên dưới dùng Windows PowerShell.
 - Node.js 20+ for FreeLLMAPI, Qwen Code, OpenCode, Crush.
-- Python 3.14+ and `uv` for free-claude-code local.
+- Python 3.10+ cho Aider; Python 3.14+ and `uv` for free-claude-code local.
 - Cài Claude Code nếu muốn test Claude workflows.
 - Cài Git nếu muốn clone repositories.
+
+## Kiểm Tra CLI Thật Trước Khi Test
+
+Codex, GitHub connector, MCP hoặc môi trường sandbox có thể test được một số bước mà không chứng minh CLI tương ứng đã được cài global trên máy. Trước khi chạy từng phần, hãy kiểm tra CLI thật trong PowerShell:
+
+```powershell
+Get-Command git -ErrorAction SilentlyContinue
+Get-Command node -ErrorAction SilentlyContinue
+Get-Command npx -ErrorAction SilentlyContinue
+Get-Command py -ErrorAction SilentlyContinue
+Get-Command python -ErrorAction SilentlyContinue
+Get-Command aider -ErrorAction SilentlyContinue
+Get-Command claude -ErrorAction SilentlyContinue
+```
+
+Kiểm tra version:
+
+```powershell
+git --version
+node --version
+npx --version
+py --version
+py -m pip --version
+aider --version
+claude --version
+```
+
+Nếu `python` không có nhưng `py` có, dùng `py -m pip ...` thay cho `pip ...` trên Windows. Nếu `aider --version` báo không tìm thấy, nghĩa là Aider chưa được cài hoặc thư mục script của Python chưa nằm trong `PATH`.
+
+Các lệnh dùng `npx --yes ...` có thể tải và chạy package tạm thời nếu máy đã có Node.js, nên không cần cài global trước. Ngược lại, Aider cần cài package Python thật trước khi gọi lệnh `aider`.
 
 ## 1. Claude Code via Remote Claude Proxy
 
@@ -262,10 +292,26 @@ Nếu model free của OpenRouter bị timeout hoặc rate-limit, hãy đổi mo
 
 ## 6. Aider
 
-OpenRouter:
+Cài thật trên Windows:
 
 ```powershell
-pip install aider-chat
+py -m pip install aider-chat
+aider --version
+```
+
+Nếu PowerShell không nhận `aider` sau khi cài, kiểm tra nơi pip đặt script:
+
+```powershell
+py -m pip show aider-chat
+py -m site --user-base
+```
+
+Sau đó mở terminal mới hoặc thêm thư mục `Scripts` tương ứng vào `PATH`.
+
+OpenRouter smoke test:
+
+```powershell
+$env:OPENROUTER_API_KEY="REPLACE_ME"
 
 $env:OPENAI_API_KEY="$env:OPENROUTER_API_KEY"
 $env:OPENAI_API_BASE="https://openrouter.ai/api/v1"
@@ -273,14 +319,18 @@ $env:OPENAI_API_BASE="https://openrouter.ai/api/v1"
 aider --model openai/qwen/qwen3-coder:free
 ```
 
-FreeLLMAPI:
+FreeLLMAPI smoke test:
 
 ```powershell
+$env:FREELLMAPI_API_KEY="REPLACE_ME"
+
 $env:OPENAI_API_KEY="$env:FREELLMAPI_API_KEY"
 $env:OPENAI_API_BASE="http://127.0.0.1:3001/v1"
 
 aider --model openai/auto
 ```
+
+Ghi chú: FreeLLMAPI phải đang chạy ở `http://127.0.0.1:3001` và unified key phải được tạo trong dashboard trước. OpenRouter cần key thật có quyền gọi model đã chọn; model free có thể bị rate limit hoặc timeout.
 
 ## 7. Crush
 
