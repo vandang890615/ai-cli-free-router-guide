@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.*
+*.log
+*.db
+node_modules/
+.venv/
+__pycache__/
+.uv-cache/
+dist/
+build/

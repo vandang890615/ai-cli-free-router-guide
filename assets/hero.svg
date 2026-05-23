@@ -1,0 +1,47 @@
+<svg width="1200" height="520" viewBox="0 0 1200 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="520" rx="28" fill="#0B1020"/>
+  <rect x="36" y="36" width="1128" height="448" rx="24" fill="#111936" stroke="#2B3A67"/>
+  <text x="72" y="98" fill="#F7FAFC" font-family="Segoe UI, Arial, sans-serif" font-size="44" font-weight="700">AI Coding CLI Free Router Guide</text>
+  <text x="74" y="136" fill="#A9B4D0" font-family="Segoe UI, Arial, sans-serif" font-size="20">Route coding agents through free-tier and local providers without leaking API keys.</text>
+
+  <g font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="700">
+    <rect x="76" y="190" width="175" height="64" rx="12" fill="#1F2A50" stroke="#5B77D6"/>
+    <text x="111" y="230" fill="#E7EEFF">Claude Code</text>
+    <rect x="76" y="276" width="175" height="64" rx="12" fill="#1F2A50" stroke="#5B77D6"/>
+    <text x="121" y="316" fill="#E7EEFF">Qwen Code</text>
+    <rect x="76" y="362" width="175" height="64" rx="12" fill="#1F2A50" stroke="#5B77D6"/>
+    <text x="106" y="402" fill="#E7EEFF">OpenCode / Aider</text>
+
+    <rect x="500" y="206" width="210" height="74" rx="14" fill="#153A3A" stroke="#28C6A8"/>
+    <text x="537" y="249" fill="#DFFCF4">free-claude-code</text>
+    <rect x="500" y="326" width="210" height="74" rx="14" fill="#3A2C12" stroke="#F4B64B"/>
+    <text x="552" y="369" fill="#FFF3D7">FreeLLMAPI</text>
+
+    <rect x="914" y="170" width="190" height="56" rx="12" fill="#2D2245" stroke="#A87CFF"/>
+    <text x="965" y="206" fill="#F4ECFF">OpenRouter</text>
+    <rect x="914" y="246" width="190" height="56" rx="12" fill="#173824" stroke="#57D68D"/>
+    <text x="959" y="282" fill="#E4FFEF">NVIDIA NIM</text>
+    <rect x="914" y="322" width="190" height="56" rx="12" fill="#40232A" stroke="#FF7A90"/>
+    <text x="953" y="358" fill="#FFE8ED">Google Gemini</text>
+  </g>
+
+  <g stroke="#64748B" stroke-width="3" stroke-linecap="round">
+    <path d="M251 222 C350 222 388 240 500 240"/>
+    <path d="M251 308 C360 308 390 358 500 358"/>
+    <path d="M251 394 C360 394 390 366 500 366"/>
+    <path d="M710 243 C790 210 840 198 914 198"/>
+    <path d="M710 243 C790 250 840 274 914 274"/>
+    <path d="M710 363 C790 335 840 350 914 350"/>
+    <path d="M710 363 C790 300 840 278 914 278"/>
+  </g>
+
+  <g fill="#64748B">
+    <circle cx="500" cy="240" r="5"/>
+    <circle cx="500" cy="358" r="5"/>
+    <circle cx="914" cy="198" r="5"/>
+    <circle cx="914" cy="274" r="5"/>
+    <circle cx="914" cy="350" r="5"/>
+  </g>
+
+  <text x="76" y="462" fill="#8792AE" font-family="Segoe UI, Arial, sans-serif" font-size="16">Local-first, key-safe, provider-flexible. Keep secrets in env vars, never in commits.</text>
+</svg>
