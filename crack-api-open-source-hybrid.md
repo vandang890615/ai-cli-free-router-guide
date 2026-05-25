@@ -75,8 +75,12 @@ Ví dụ stack đã test:
 
 - LM Studio chạy `Qwen3-14B Q5_K_M` qua OpenAI-compatible API `http://127.0.0.1:1234/v1`.
 - Open WebUI chạy Docker ở `http://127.0.0.1:3000` làm giao diện chat/local model.
-- Codex/CLI dùng cho code workflow thật: sửa file, chạy test, đọc lỗi.
+- Aider và OpenCode gọi thẳng LM Studio local, sửa file và chạy `npm test` pass trong repo nhỏ.
+- Codex/CLI dùng cho code workflow thật: sửa file, chạy test, đọc lỗi, review diff.
+- Gemma 4 31B GGUF có thể là hướng thử tiếp theo; với máy 32GB RAM / 12GB VRAM nên bắt đầu từ Q3_K_M trước Q4_K_M.
 - Web search phải bật rõ ràng; model local không tự có realtime.
+
+Bài học thực dụng ở đây là tách vai trò công cụ. WebUI là nơi chat và thử model. CLI là nơi code thật, vì CLI đứng trong repo, đọc file, sửa file, chạy test và để lại diff kiểm soát được. Docker chỉ là phương tiện chạy Open WebUI gọn hơn; bản thân LM Studio vẫn có thể chạy model và API local mà không cần Docker.
 
 ### Cloud extension
 

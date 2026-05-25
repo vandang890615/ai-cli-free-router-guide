@@ -554,9 +554,10 @@ Stack đã test trên Windows:
 | --- | --- | --- |
 | LM Studio | Chạy model local và expose OpenAI-compatible API | Endpoint `http://127.0.0.1:1234/v1`. |
 | Qwen3-14B Q5_K_M | Model local coding/chat | Chạy được trên máy 32GB RAM / 12GB VRAM, nhưng chưa thật mượt; Q4_K_M có thể nhẹ hơn. |
+| Gemma 4 31B GGUF | Model local để thử thêm | Với máy 32GB RAM / 12GB VRAM, nên thử Q3_K_M trước; Q4_K_M nặng hơn. |
 | Open WebUI | Giao diện web cho local model | Chạy bằng Docker ở `http://127.0.0.1:3000`. |
 | Docker Desktop | Chạy Open WebUI container | Không bắt buộc cho LM Studio, nhưng tiện để chạy WebUI gọn. |
-| Codex/CLI | Dùng cho code workflow thật | WebUI hợp chat; code workflow nên để CLI/agent sửa file và chạy test. |
+| Aider/OpenCode/Codex/CLI | Dùng cho code workflow thật | WebUI hợp chat; code workflow nên để CLI/agent sửa file và chạy test. |
 
 Start script mẫu:
 
@@ -588,7 +589,7 @@ File script đang dùng nên giữ các điểm này:
 
 ```powershell
 $lms = "$env:LOCALAPPDATA\Programs\LM Studio\resources\app\.webpack\lms.exe"
-& $lms load qwen3-14b --gpu max -c 4096 --parallel 1 --identifier qwen3-14b-q5 -y
+& $lms load qwen3-14b --gpu max -c 12288 --parallel 1 --identifier qwen3-14b-q5 -y
 
 docker run -d --name open-webui --restart unless-stopped `
   -p 3000:8080 `
@@ -608,7 +609,107 @@ docker run -d --name open-webui --restart unless-stopped `
   ghcr.io/open-webui/open-webui:main
 ```
 
-Kết luận sau test: combo này chạy được để học local LLM và code prompt, nhưng chưa mượt như cloud agent. Nếu ưu tiên code, dùng Codex/Copilot/Antigravity CLI cho file edits và test; giữ Open WebUI làm giao diện chat/local model.
+### 11.1. Dùng Local Model Để Code Bằng Aider
+
+Aider là đường dễ test nhất với local OpenAI-compatible endpoint vì chỉ cần trỏ `OPENAI_API_BASE` về LM Studio.
+
+Chạy trong thư mục repo thật, không chạy từ `C:\Windows\System32`:
+
+```powershell
+cd C:\Users\ADMIN\Desktop\local-ai-code-test
+$env:OPENAI_API_KEY = "lm-studio"
+$env:OPENAI_API_BASE = "http://127.0.0.1:1234/v1"
+aider --model openai/qwen3-14b-q5 --no-auto-commits --no-gitignore --yes-always
+```
+
+Smoke test đã chạy:
+
+```powershell
+aider --model openai/qwen3-14b-q5 --no-auto-commits --no-gitignore --yes-always --test-cmd "npm test" --auto-test --message "The tests fail because src/arrayUtils.mjs is missing. Implement the minimal sumEvenNumbers function so npm test passes. Do not change tests." test/arrayUtils.test.mjs
+```
+
+Kết quả thực tế: Aider tạo `src/arrayUtils.mjs` và `npm test` pass `7/7`.
+
+Lưu ý riêng với Qwen3: không đặt `/no_think` ở đầu message cho Aider, vì Aider hiểu chuỗi bắt đầu bằng `/` là lệnh nội bộ.
+
+### 11.2. Dùng Local Model Để Code Bằng OpenCode
+
+OpenCode cần khai báo provider riêng trong:
+
+```text
+C:\Users\ADMIN\.config\opencode\opencode.json
+```
+
+Provider đã test:
+
+```json
+{
+  "provider": {
+    "lmstudio-local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:1234/v1",
+        "apiKey": "lm-studio"
+      },
+      "models": {
+        "qwen3-14b-q5": {
+          "name": "Qwen3 14B Q5 via LM Studio"
+        }
+      }
+    }
+  }
+}
+```
+
+Không dùng provider id `lmstudio` nếu bản OpenCode của bạn đã có built-in provider cùng tên, vì nó có thể trỏ sang URL khác. Dùng `lmstudio-local` để tránh đụng tên.
+
+Kiểm tra model:
+
+```powershell
+npx --yes opencode-ai models lmstudio-local --verbose
+```
+
+Chạy task code một lượt:
+
+```powershell
+cd C:\Users\ADMIN\Desktop\local-ai-code-test
+npx --yes opencode-ai run --model "lmstudio-local/qwen3-14b-q5" --dangerously-skip-permissions -- "The tests fail because src/arrayUtils.mjs is missing. Implement the minimal sumEvenNumbers function so npm test passes. Do not change tests. After editing, run npm test."
+```
+
+Kết quả thực tế: OpenCode sửa file, chạy `npm test`, pass `7/7`.
+
+Lưu ý quan trọng: lần đầu OpenCode có thể fail kiểu `n_keep >= n_ctx` nếu context LM Studio quá thấp. Tăng context khi load model, ví dụ `-c 12288`.
+
+### 11.3. Helper Script Trên Desktop
+
+Để không phải nhớ lệnh dài, có thể tạo 2 script:
+
+```powershell
+& "C:\Users\ADMIN\Desktop\run-aider-lmstudio.ps1" "Reply with exactly OK. Do not explain."
+& "C:\Users\ADMIN\Desktop\run-opencode-lmstudio.ps1" "Reply with exactly OK. Do not edit files."
+```
+
+Script nên tự `Set-Location` vào project thật trước khi gọi CLI. Điều này tránh lỗi tạo nhầm Git repo trong `C:\Windows\System32`.
+
+### 11.4. Thử Gemma 4 31B GGUF
+
+Nếu muốn test thêm Gemma theo hướng local, ưu tiên bản GGUF:
+
+```text
+douyamv/Gemma-4-31B-JANG_4M-CRACK-GGUF
+```
+
+Với máy 32GB RAM / 12GB VRAM, nên thử `Q3_K_M` trước. `Q4_K_M` nặng hơn, có thể chậm hoặc thiếu RAM/VRAM tùy context.
+
+Ví dụ tải và load qua LM Studio CLI:
+
+```powershell
+$lms = "$env:LOCALAPPDATA\Programs\LM Studio\resources\app\.webpack\lms.exe"
+& $lms get "https://huggingface.co/douyamv/Gemma-4-31B-JANG_4M-CRACK-GGUF/blob/main/gemma-4-31b-jang-crack-Q3_K_M.gguf" --gguf -y
+& $lms load gemma-4-31b-jang-crack --gpu max -c 4096 --parallel 1 --identifier gemma4-crack-q3 -y
+```
+
+Kết luận sau test: combo local chạy được để học local LLM, chat riêng tư hơn và smoke test coding agent. Nhưng nếu mục tiêu là code thật hằng ngày, ưu tiên CLI như Codex, Copilot CLI, Antigravity CLI, Aider hoặc OpenCode; giữ Open WebUI làm giao diện chat/local model.
 
 ## Công Thức Benchmark
 
@@ -640,6 +741,8 @@ Chấm điểm mỗi lần chạy:
 | Tool-call error | Model không hỗ trợ pattern tool-calling của CLI | Đổi sang model có khả năng coding/tool-use tốt hơn. |
 | Proxy start nhưng không mở port | Lỗi dependency/runtime | Chạy foreground và đọc log. |
 | Google key xuất hiện trong URL logs | Gemini API key được truyền qua query string | Không chia sẻ log; rotate key đã lộ. |
+| Aider tạo Git repo trong `C:\Windows\System32` | Chạy `aider` khi terminal đang ở System32 | Đóng Aider, mở PowerShell trong thư mục project thật rồi chạy lại; nếu cần, xóa riêng `C:\Windows\System32\.git` bằng quyền Administrator sau khi kiểm tra đúng path. |
+| OpenCode báo `n_keep >= n_ctx` | Context LM Studio quá thấp so với prompt/tool schema của CLI | Load model với context lớn hơn, ví dụ `-c 12288`. |
 
 ## References
 
@@ -662,6 +765,7 @@ Chấm điểm mỗi lần chạy:
 - Deprecation of `gh-copilot` extension: <https://github.blog/changelog/2025-09-25-upcoming-deprecation-of-gh-copilot-cli-extension/>
 - LM Studio: <https://lmstudio.ai>
 - Open WebUI: <https://docs.openwebui.com>
+- Gemma 4 31B JANG GGUF: <https://huggingface.co/douyamv/Gemma-4-31B-JANG_4M-CRACK-GGUF>
 
 ## Lưu Ý
 

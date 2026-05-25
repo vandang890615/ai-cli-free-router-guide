@@ -11,6 +11,9 @@ Nội dung mới đáng chú ý:
 - Ghi rõ nên ngưng bắt đầu workflow mới bằng Gemini CLI cá nhân/free và Copilot CLI/extension cũ.
 - Thêm combo local đã test: LM Studio + Qwen3-14B Q5_K_M + Open WebUI + Docker + Codex/CLI.
 - Ghi rõ giới hạn thực tế: Open WebUI không tự web search realtime nếu lượt chat không bật Web Search; Qwen3 cần `/no_think` nếu muốn nhanh.
+- Bổ sung test code thật với Aider và OpenCode gọi thẳng LM Studio local.
+- Thêm cảnh báo lỗi chạy nhầm Aider trong `C:\Windows\System32` làm tạo nhầm `.git`.
+- Thêm hướng thử Gemma 4 31B GGUF: máy 32GB RAM / 12GB VRAM nên thử Q3_K_M trước Q4_K_M.
 - Bổ sung bài viết dài: "Thời của crack đã chết: Kỷ nguyên của API, open source và tư duy đòn bẩy hệ thống".
 
 Stack mình thấy đáng test nhất hiện tại:
@@ -20,16 +23,26 @@ Stack mình thấy đáng test nhất hiện tại:
 3. Codex/Claude Code cho workflow sửa code, chạy test, review diff nghiêm túc.
 4. FreeLLMAPI cho các CLI hỗ trợ OpenAI-compatible `/v1/chat/completions`.
 5. LM Studio + Open WebUI để học local LLM, test model, và chạy chat local.
-6. Aider/OpenCode nếu muốn đường OpenAI-compatible đơn giản, dễ smoke test.
+6. Aider/OpenCode nếu muốn đường OpenAI-compatible đơn giản, dễ smoke test với model local.
 
 Kết quả test thực tế trên máy Windows:
 
 - LM Studio chạy được Qwen3-14B Q5_K_M qua `http://127.0.0.1:1234/v1`.
 - Open WebUI chạy Docker ở `http://127.0.0.1:3000`.
 - Qwen3 tool calling cơ bản chạy được qua LM Studio API.
-- Code prompt đơn giản qua local CLI phản hồi được khoảng vài giây, nhưng chưa mượt như cloud agent.
+- Aider gọi `openai/qwen3-14b-q5` qua LM Studio, sửa file và chạy `npm test` pass `7/7`.
+- OpenCode gọi `lmstudio-local/qwen3-14b-q5`, sửa file và chạy `npm test` pass `7/7`.
+- OpenCode cần context LM Studio đủ lớn; test thực tế phải tăng lên khoảng `-c 12288` để tránh lỗi `n_keep >= n_ctx`.
+- Code prompt đơn giản qua local CLI chạy được, nhưng chưa mượt như cloud agent.
 - Web search trong Open WebUI chỉ chạy khi request có `features.web_search=true`; gõ "hôm nay" không tự biến model local thành realtime search.
 - FreeLLMAPI, Aider, Qwen Code, OpenCode vẫn giữ phần test/caveat cũ để ai cần router free-tier có chỗ đối chiếu.
+
+Bài học thực dụng sau khi test:
+
+- WebUI dùng để chat, thử model, bật/tắt web search, xem phản hồi.
+- CLI dùng để code thật: đọc repo, sửa file, chạy test, xem diff.
+- Docker chỉ cần cho Open WebUI; LM Studio tự chạy model và API local, không cần Docker.
+- Terminal phải đứng trong thư mục project thật trước khi gọi Aider/OpenCode. Đừng chạy từ `C:\Windows\System32`.
 
 Quan điểm chính của bài viết mới:
 
