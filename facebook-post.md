@@ -9,11 +9,13 @@ Nội dung mới đáng chú ý:
 - Thêm Antigravity CLI: hướng đi mới thay cho Gemini CLI cá nhân/free theo thông báo chuyển đổi của Google.
 - Thêm GitHub Copilot CLI mới: dùng `@github/copilot` hoặc `winget install GitHub.Copilot`, khác với `gh-copilot`/GitHub Next CLI cũ.
 - Ghi rõ nên ngưng bắt đầu workflow mới bằng Gemini CLI cá nhân/free và Copilot CLI/extension cũ.
-- Thêm combo local đã test: LM Studio + Qwen3-14B Q5_K_M + Open WebUI + Docker + Codex/CLI.
+- Cập nhật combo local đã test: LM Studio + Qwen3-14B Q5_K_M là lõi chính; Open WebUI/Docker chỉ bật khi cần giao diện chat.
 - Ghi rõ giới hạn thực tế: Open WebUI không tự web search realtime nếu lượt chat không bật Web Search; Qwen3 cần `/no_think` nếu muốn nhanh.
 - Bổ sung test code thật với Aider và OpenCode gọi thẳng LM Studio local.
 - Thêm cảnh báo lỗi chạy nhầm Aider trong `C:\Windows\System32` làm tạo nhầm `.git`.
-- Thêm hướng thử Gemma 4 31B GGUF: máy 32GB RAM / 12GB VRAM nên thử Q3_K_M trước Q4_K_M.
+- Cập nhật kết quả Gemma: bản douyamv Q3_K_M chạy được nhưng nặng/chậm nên đã xóa; bản Unsloth IQ2 nhẹ hơn, API/Aider OK nhưng OpenCode lỗi prompt template khi dùng tools.
+- Thêm launcher `.cmd` để bấm trực tiếp trên Windows thay vì double-click `.ps1`.
+- Ghi rõ OpenClaw 2026.2.9 không nên là hướng local chính vì gateway/token/lock rối và config dễ chứa raw key.
 - Bổ sung bài viết dài: "Thời của crack đã chết: Kỷ nguyên của API, open source và tư duy đòn bẩy hệ thống".
 
 Stack mình thấy đáng test nhất hiện tại:
@@ -22,8 +24,8 @@ Stack mình thấy đáng test nhất hiện tại:
 2. GitHub Copilot CLI mới nếu có Copilot subscription hoặc muốn thử BYOK/local model.
 3. Codex/Claude Code cho workflow sửa code, chạy test, review diff nghiêm túc.
 4. FreeLLMAPI cho các CLI hỗ trợ OpenAI-compatible `/v1/chat/completions`.
-5. LM Studio + Open WebUI để học local LLM, test model, và chạy chat local.
-6. Aider/OpenCode nếu muốn đường OpenAI-compatible đơn giản, dễ smoke test với model local.
+5. LM Studio + Qwen3-14B Q5_K_M để làm local core.
+6. Open WebUI chỉ bật khi cần chat UI; Aider/OpenCode chỉ dùng để benchmark code nhỏ với model local.
 
 Kết quả test thực tế trên máy Windows:
 
@@ -35,6 +37,10 @@ Kết quả test thực tế trên máy Windows:
 - OpenCode cần context LM Studio đủ lớn; test thực tế phải tăng lên khoảng `-c 12288` để tránh lỗi `n_keep >= n_ctx`.
 - Code prompt đơn giản qua local CLI chạy được, nhưng chưa mượt như cloud agent.
 - Web search trong Open WebUI chỉ chạy khi request có `features.web_search=true`; gõ "hôm nay" không tự biến model local thành realtime search.
+- Nếu Docker Desktop chưa chạy, Open WebUI mất port `3000`; khi Docker lên lại, container có thể healthy trở lại.
+- Aider/OpenCode không phù hợp để hỏi realtime như "giá vàng hôm nay"; trong repo code, nó có thể hiểu nhầm thành yêu cầu sửa file.
+- Unsloth Gemma 4 31B IQ2 chạy API/Aider được, nhưng OpenCode lỗi Jinja prompt template khi gửi request có `tools`.
+- OpenClaw canvas/gateway test được nhưng không ổn định cho workflow chính trong setup này.
 - FreeLLMAPI, Aider, Qwen Code, OpenCode vẫn giữ phần test/caveat cũ để ai cần router free-tier có chỗ đối chiếu.
 
 Bài học thực dụng sau khi test:
@@ -43,6 +49,7 @@ Bài học thực dụng sau khi test:
 - CLI dùng để code thật: đọc repo, sửa file, chạy test, xem diff.
 - Docker chỉ cần cho Open WebUI; LM Studio tự chạy model và API local, không cần Docker.
 - Terminal phải đứng trong thư mục project thật trước khi gọi Aider/OpenCode. Đừng chạy từ `C:\Windows\System32`.
+- Với máy 32GB RAM / 12GB VRAM, local stack nên chạy lean mode trước: LM Studio + Qwen, tắt OpenClaw, chỉ bật WebUI khi cần.
 
 Quan điểm chính của bài viết mới:
 

@@ -74,13 +74,16 @@ Giữ phần lõi ở local hoặc private infrastructure:
 Ví dụ stack đã test:
 
 - LM Studio chạy `Qwen3-14B Q5_K_M` qua OpenAI-compatible API `http://127.0.0.1:1234/v1`.
-- Open WebUI chạy Docker ở `http://127.0.0.1:3000` làm giao diện chat/local model.
-- Aider và OpenCode gọi thẳng LM Studio local, sửa file và chạy `npm test` pass trong repo nhỏ.
-- Codex/CLI dùng cho code workflow thật: sửa file, chạy test, đọc lỗi, review diff.
-- Gemma 4 31B GGUF có thể là hướng thử tiếp theo; với máy 32GB RAM / 12GB VRAM nên bắt đầu từ Q3_K_M trước Q4_K_M.
+- Open WebUI chạy Docker ở `http://127.0.0.1:3000` làm giao diện chat/local model khi cần, nhưng không bắt buộc cho LM Studio.
+- Aider và OpenCode gọi thẳng LM Studio local, sửa file và chạy `npm test` pass trong repo nhỏ, nhưng tốc độ còn chậm hơn cloud agent.
+- Qwen3-14B Q5 là model local ổn nhất trong đợt test; load context `12288` để OpenCode không vướng `n_keep >= n_ctx`.
+- Gemma 4 31B Unsloth IQ2 nhẹ hơn, API/Aider smoke test OK, nhưng OpenCode lỗi prompt template khi request có `tools`.
+- OpenClaw đã thử nhưng không nên đặt làm hướng chính trong setup này vì gateway/token/lock rối và config dễ chứa raw key nếu chia sẻ.
 - Web search phải bật rõ ràng; model local không tự có realtime.
 
 Bài học thực dụng ở đây là tách vai trò công cụ. WebUI là nơi chat và thử model. CLI là nơi code thật, vì CLI đứng trong repo, đọc file, sửa file, chạy test và để lại diff kiểm soát được. Docker chỉ là phương tiện chạy Open WebUI gọn hơn; bản thân LM Studio vẫn có thể chạy model và API local mà không cần Docker.
+
+Với máy 32GB RAM / 12GB VRAM, chiến lược hợp lý là lean-first: bật LM Studio + Qwen trước, tắt các gateway phụ gây nhiễu, chỉ bật Docker/WebUI khi cần giao diện. Local LLM không thay thế web search realtime; hỏi "giá vàng hôm nay" trong coding CLI chỉ làm agent hiểu nhầm thành yêu cầu sửa code.
 
 ### Cloud extension
 

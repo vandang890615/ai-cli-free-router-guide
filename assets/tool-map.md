@@ -9,6 +9,8 @@ flowchart LR
     Aider["Aider"]
     Crush["Crush"]
     Codex["Codex CLI"]
+    AGY["Antigravity CLI"]
+    Copilot["GitHub Copilot CLI"]
   end
 
   subgraph Proxy["Router / Proxy Layer"]
@@ -18,6 +20,7 @@ flowchart LR
     NIM["NVIDIA NIM"]
     Gemini["Google Gemini"]
     Resp["Responses API Adapter"]
+    Local["LM Studio / Ollama / vLLM<br/>Local OpenAI-compatible"]
   end
 
   Claude --> FCC
@@ -35,4 +38,8 @@ flowchart LR
   FCC --> OR
   Codex -. "Needs Responses API" .-> Resp
   Resp -. "May translate to chat-completions" .-> FLA
+  AGY --> Gemini
+  Copilot --> Local
+  OpenCode --> Local
+  Aider --> Local
 ```

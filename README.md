@@ -93,7 +93,7 @@ flowchart LR
 | Codex CLI custom providers | Chỉ dùng provider/adapter có Responses API | Codex CLI bản mới thường ưu tiên `/v1/responses`; router chỉ có chat-completions có thể fail. |
 | Terminal agent Google mới | Antigravity CLI | Google đang chuyển hướng người dùng Gemini CLI cá nhân/free sang Antigravity CLI. |
 | Copilot terminal agent mới | GitHub Copilot CLI mới (`@github/copilot`) | Khác với `gh-copilot`/GitHub Next CLI cũ; có agent workflow, MCP/plugins/skills và hỗ trợ BYOK/local models. |
-| Combo local đã test | LM Studio + Open WebUI + Qwen3-14B Q5_K_M + Codex/CLI | Dùng tốt để học local LLM và code prompt; web search trong Open WebUI phải bật theo từng lượt. |
+| Combo local đã test | LM Studio + Qwen3-14B Q5_K_M + Aider/OpenCode; Open WebUI tùy chọn | Qwen là model local ổn nhất trong đợt test. WebUI chỉ nên bật khi cần giao diện chat; local model không thay được web search realtime. |
 
 ## Bảo Mật Trước
 
@@ -544,25 +544,41 @@ Dùng Codex với:
 - Provider/router có hỗ trợ Responses API.
 - Protocol adapter dịch Responses API sang chat-completions.
 
-## 11. Combo Local Đã Test: LM Studio + Open WebUI + Qwen3
+## 11. Combo Local Đã Test: LM Studio + Qwen3 + WebUI Tùy Chọn
 
-Mục tiêu combo này không phải thay ChatGPT realtime, mà là hiểu cách dựng local core để code/chat riêng tư hơn, giảm phụ thuộc cloud và kiểm soát chi phí.
+Mục tiêu combo này không phải thay ChatGPT realtime hay cloud coding agent. Mục tiêu thực tế là dựng một local core để học model local, giữ dữ liệu nhạy cảm ở máy mình, test prompt/API và có một workflow coding nhỏ khi cần.
 
 Stack đã test trên Windows:
 
 | Thành Phần | Vai Trò | Ghi Chú Thực Tế |
 | --- | --- | --- |
 | LM Studio | Chạy model local và expose OpenAI-compatible API | Endpoint `http://127.0.0.1:1234/v1`. |
-| Qwen3-14B Q5_K_M | Model local coding/chat | Chạy được trên máy 32GB RAM / 12GB VRAM, nhưng chưa thật mượt; Q4_K_M có thể nhẹ hơn. |
-| Gemma 4 31B GGUF | Model local để thử thêm | Với máy 32GB RAM / 12GB VRAM, nên thử Q3_K_M trước; Q4_K_M nặng hơn. |
-| Open WebUI | Giao diện web cho local model | Chạy bằng Docker ở `http://127.0.0.1:3000`. |
-| Docker Desktop | Chạy Open WebUI container | Không bắt buộc cho LM Studio, nhưng tiện để chạy WebUI gọn. |
-| Aider/OpenCode/Codex/CLI | Dùng cho code workflow thật | WebUI hợp chat; code workflow nên để CLI/agent sửa file và chạy test. |
+| Qwen3-14B Q5_K_M | Model local chính cho coding/chat | Chạy ổn nhất trong test trên máy 32GB RAM / 12GB VRAM. Load với context `12288` để OpenCode không lỗi `n_keep >= n_ctx`. |
+| Unsloth Gemma 4 31B IQ2 | Model phụ để thử chat/Aider | API và Aider smoke test OK, nhưng OpenCode fail vì prompt template/tool calling trong LM Studio. |
+| Open WebUI | Giao diện web cho local model | Chạy bằng Docker ở `http://127.0.0.1:3000`; bật khi cần chat UI, không nên coi là trung tâm coding workflow. |
+| Docker Desktop | Chạy Open WebUI container | Không bắt buộc cho LM Studio. Nếu Docker daemon tắt, WebUI sẽ mất port `3000` hoặc báo lỗi. |
+| Aider/OpenCode | CLI local để smoke test code | Chạy được với Qwen nhưng chậm hơn cloud agent; chỉ nên dùng prompt code rõ ràng, không hỏi realtime/news. |
+| OpenClaw | Đã thử nhưng không khuyến nghị làm hướng chính | Bản test `2026.2.9` cũ, gateway/token dễ lỗi, config có nguy cơ lộ API key nếu chia sẻ. |
 
-Start script mẫu:
+Start script nhẹ nhất, chỉ LM Studio + Qwen và tắt OpenClaw:
 
 ```powershell
-& "C:\Users\ADMIN\Desktop\start-local-ai-stack.ps1"
+& "C:\Users\ADMIN\Desktop\start-local-ai-stack.ps1" -SkipWebUI -StopOpenClaw
+```
+
+Start full stack có Docker/Open WebUI:
+
+```powershell
+& "C:\Users\ADMIN\Desktop\start-local-ai-stack.ps1" -StopOpenClaw
+```
+
+Nếu muốn bấm trực tiếp trên Desktop, tạo launcher `.cmd` thay vì double-click `.ps1`:
+
+```bat
+START_LOCAL_AI_LIGHT.cmd
+START_LOCAL_AI_FULL_WEBUI.cmd
+AIDER_LOCAL_QWEN.cmd
+OPENCODE_LOCAL_QWEN.cmd
 ```
 
 Kiểm tra LM Studio API:
@@ -609,6 +625,8 @@ docker run -d --name open-webui --restart unless-stopped `
   ghcr.io/open-webui/open-webui:main
 ```
 
+Nếu muốn chạy lean mode, bỏ toàn bộ phần Docker/WebUI và chỉ giữ LM Studio server + Qwen. Trong test thực tế, đây là cấu hình ít lỗi nhất.
+
 ### 11.1. Dùng Local Model Để Code Bằng Aider
 
 Aider là đường dễ test nhất với local OpenAI-compatible endpoint vì chỉ cần trỏ `OPENAI_API_BASE` về LM Studio.
@@ -619,7 +637,7 @@ Chạy trong thư mục repo thật, không chạy từ `C:\Windows\System32`:
 cd C:\Users\ADMIN\Desktop\local-ai-code-test
 $env:OPENAI_API_KEY = "lm-studio"
 $env:OPENAI_API_BASE = "http://127.0.0.1:1234/v1"
-aider --model openai/qwen3-14b-q5 --no-auto-commits --no-gitignore --yes-always
+aider --model openai/qwen3-14b-q5 --edit-format diff --map-tokens 512 --no-auto-commits --no-gitignore --yes-always --no-show-model-warnings
 ```
 
 Smoke test đã chạy:
@@ -630,7 +648,11 @@ aider --model openai/qwen3-14b-q5 --no-auto-commits --no-gitignore --yes-always 
 
 Kết quả thực tế: Aider tạo `src/arrayUtils.mjs` và `npm test` pass `7/7`.
 
-Lưu ý riêng với Qwen3: không đặt `/no_think` ở đầu message cho Aider, vì Aider hiểu chuỗi bắt đầu bằng `/` là lệnh nội bộ.
+Lưu ý thực tế:
+
+- Không đặt `/no_think` ở đầu message cho Aider, vì Aider hiểu chuỗi bắt đầu bằng `/` là lệnh nội bộ.
+- Không hỏi "giá vàng hôm nay" hoặc tin realtime trong repo code. Aider sẽ cố hiểu đó là yêu cầu sửa code và có thể đề xuất diff sai.
+- Dùng `--map-tokens 512` để giảm repo-map, giúp model local đỡ chậm.
 
 ### 11.2. Dùng Local Model Để Code Bằng OpenCode
 
@@ -678,38 +700,83 @@ npx --yes opencode-ai run --model "lmstudio-local/qwen3-14b-q5" --dangerously-sk
 
 Kết quả thực tế: OpenCode sửa file, chạy `npm test`, pass `7/7`.
 
-Lưu ý quan trọng: lần đầu OpenCode có thể fail kiểu `n_keep >= n_ctx` nếu context LM Studio quá thấp. Tăng context khi load model, ví dụ `-c 12288`.
+Lưu ý quan trọng:
+
+- Lần đầu OpenCode có thể fail kiểu `n_keep >= n_ctx` nếu context LM Studio quá thấp. Tăng context khi load model, ví dụ `-c 12288`.
+- OpenCode dùng tool/function schema nhiều hơn Aider, nên kén prompt template hơn. Qwen chạy được; Unsloth Gemma 4 IQ2 fail với lỗi Jinja template khi request có `tools`.
 
 ### 11.3. Helper Script Trên Desktop
 
-Để không phải nhớ lệnh dài, có thể tạo 2 script:
+Để không phải nhớ lệnh dài, dùng PowerShell script:
 
 ```powershell
 & "C:\Users\ADMIN\Desktop\run-aider-lmstudio.ps1" "Reply with exactly OK. Do not explain."
 & "C:\Users\ADMIN\Desktop\run-opencode-lmstudio.ps1" "Reply with exactly OK. Do not edit files."
 ```
 
+Vì double-click `.ps1` trên Windows thường không chạy trực tiếp, tạo thêm `.cmd` launcher:
+
+```bat
+@echo off
+powershell.exe -NoProfile -ExecutionPolicy Bypass -NoExit -File "%USERPROFILE%\Desktop\run-aider-lmstudio.ps1"
+```
+
 Script nên tự `Set-Location` vào project thật trước khi gọi CLI. Điều này tránh lỗi tạo nhầm Git repo trong `C:\Windows\System32`.
 
 ### 11.4. Thử Gemma 4 31B GGUF
 
-Nếu muốn test thêm Gemma theo hướng local, ưu tiên bản GGUF:
+Đã thử hai hướng Gemma:
 
-```text
-douyamv/Gemma-4-31B-JANG_4M-CRACK-GGUF
+- `douyamv/Gemma-4-31B-JANG_4M-CRACK-GGUF` bản `Q3_K_M`: tải được, chạy được nhưng nặng/chậm; đã xóa để giải phóng khoảng 15.29GB.
+- `unsloth/gemma-4-31B-it-GGUF` bản `UD-IQ2_XXS`: nhẹ hơn, API trả lời OK, Aider smoke test OK.
+
+Lệnh tải bản Unsloth nhẹ:
+
+```powershell
+& "$env:LOCALAPPDATA\Programs\LM Studio\resources\app\.webpack\lms.exe" get "https://huggingface.co/unsloth/gemma-4-31B-it-GGUF/blob/main/gemma-4-31B-it-UD-IQ2_XXS.gguf" --gguf -y
 ```
 
-Với máy 32GB RAM / 12GB VRAM, nên thử `Q3_K_M` trước. `Q4_K_M` nặng hơn, có thể chậm hoặc thiếu RAM/VRAM tùy context.
-
-Ví dụ tải và load qua LM Studio CLI:
+Load bản này:
 
 ```powershell
 $lms = "$env:LOCALAPPDATA\Programs\LM Studio\resources\app\.webpack\lms.exe"
-& $lms get "https://huggingface.co/douyamv/Gemma-4-31B-JANG_4M-CRACK-GGUF/blob/main/gemma-4-31b-jang-crack-Q3_K_M.gguf" --gguf -y
-& $lms load gemma-4-31b-jang-crack --gpu max -c 4096 --parallel 1 --identifier gemma4-crack-q3 -y
+& $lms load gemma-4-31b-it --gpu max -c 12288 --parallel 1 --identifier gemma4-unsloth-iq2 -y
 ```
 
-Kết luận sau test: combo local chạy được để học local LLM, chat riêng tư hơn và smoke test coding agent. Nhưng nếu mục tiêu là code thật hằng ngày, ưu tiên CLI như Codex, Copilot CLI, Antigravity CLI, Aider hoặc OpenCode; giữ Open WebUI làm giao diện chat/local model.
+Kết luận Gemma: dùng được để test chat/Aider, nhưng không phải lựa chọn chính cho OpenCode. Khi OpenCode gửi request có `tools`, LM Studio báo:
+
+```text
+Error rendering prompt with jinja template: Cannot call something that is not a function: got UndefinedValue
+```
+
+Vì vậy stack local chính vẫn là `Qwen3-14B Q5_K_M`.
+
+### 11.5. Open WebUI Và OpenClaw
+
+Open WebUI:
+
+- Nếu Docker Desktop chưa chạy, `http://127.0.0.1:3000` sẽ connection refused.
+- Sau khi Docker daemon lên, container `open-webui` có thể tự chạy lại và health sẽ về `healthy`.
+- API như `/api/models` có thể trả `401 Unauthorized` nếu gọi trực tiếp không có session/auth; đó không phải lỗi model.
+- Web search không tự bật theo prompt. Cần bật trong UI và kiểm tra request có `features.web_search=true`.
+
+OpenClaw:
+
+- Đã thử bản `2026.2.9`.
+- Canvas có thể mở ở `http://127.0.0.1:18789/__openclaw__/canvas/`, nhưng gateway cần token.
+- Log từng báo `token_missing`, `unauthorized`, và stale lock `gateway already running`.
+- Config OpenClaw có thể chứa raw API key hoặc Telegram bot token; không chụp/đăng file config.
+- Hiện không khuyến nghị dùng OpenClaw làm hướng local chính trong stack này.
+
+### 11.6. Kết Luận Local Stack
+
+Kết luận sau test thực tế:
+
+- Local model tốt để học, kiểm soát dữ liệu, test prompt/API và xử lý việc nhỏ.
+- Coding CLI local chạy được nhưng chậm hơn cloud agent rõ rệt trên máy 32GB RAM / 12GB VRAM.
+- Hỏi realtime như "giá vàng hôm nay" không phù hợp với Aider/OpenCode local.
+- WebUI hợp chat/thử model; CLI hợp sửa code; LM Studio là lõi API.
+- Bật lean mode trước, chỉ bật Docker/WebUI khi thật sự cần giao diện.
 
 ## Công Thức Benchmark
 
@@ -743,6 +810,9 @@ Chấm điểm mỗi lần chạy:
 | Google key xuất hiện trong URL logs | Gemini API key được truyền qua query string | Không chia sẻ log; rotate key đã lộ. |
 | Aider tạo Git repo trong `C:\Windows\System32` | Chạy `aider` khi terminal đang ở System32 | Đóng Aider, mở PowerShell trong thư mục project thật rồi chạy lại; nếu cần, xóa riêng `C:\Windows\System32\.git` bằng quyền Administrator sau khi kiểm tra đúng path. |
 | OpenCode báo `n_keep >= n_ctx` | Context LM Studio quá thấp so với prompt/tool schema của CLI | Load model với context lớn hơn, ví dụ `-c 12288`. |
+| OpenCode + Gemma báo lỗi Jinja template | Prompt template của model không render được request có `tools` | Dùng Qwen cho OpenCode, hoặc tìm bản `lmstudio-community` có prompt template đã sửa. |
+| Open WebUI connection refused | Docker Desktop chưa chạy hoặc container chưa healthy | Start Docker Desktop, kiểm tra `docker ps`, chờ `open-webui` healthy. |
+| OpenClaw canvas báo disconnected/token missing | Gateway cần token hoặc lock cũ | Dán gateway token vào Control UI settings; nếu vẫn lỗi, stop gateway/scheduled task rồi start lại. |
 
 ## References
 
@@ -766,6 +836,7 @@ Chấm điểm mỗi lần chạy:
 - LM Studio: <https://lmstudio.ai>
 - Open WebUI: <https://docs.openwebui.com>
 - Gemma 4 31B JANG GGUF: <https://huggingface.co/douyamv/Gemma-4-31B-JANG_4M-CRACK-GGUF>
+- Unsloth Gemma 4 31B GGUF: <https://huggingface.co/unsloth/gemma-4-31B-it-GGUF>
 
 ## Lưu Ý
 
