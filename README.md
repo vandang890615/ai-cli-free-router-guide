@@ -24,7 +24,9 @@ Nguyên tắc an toàn:
 
 Bài viết này được tạo trong quá trình dùng Codex để test nhanh các AI coding CLI, router và provider trên một máy Windows thực tế. Một số kết quả là smoke test và benchmark nhỏ, không phải benchmark chuẩn công nghiệp.
 
-Mục tiêu của repo là mở ra một tài liệu cộng đồng: nếu bạn đã từng test Claude Code, Codex CLI, Qwen Code, OpenCode, Aider, Crush, 9Router, FreeLLMAPI, free-claude-code, LiteLLM, OpenRouter, NVIDIA NIM, Gemini hoặc các provider/router khác, hãy mở issue hoặc pull request để bổ sung kinh nghiệm.
+Nếu muốn phần tư duy dài hơn về vì sao nên chuyển từ crack sang API/open-source/local-cloud hybrid, đọc thêm: [Thời Của Crack Đã Chết](crack-api-open-source-hybrid.md).
+
+Mục tiêu của repo là mở ra một tài liệu cộng đồng: nếu bạn đã từng test Claude Code, Codex CLI, Antigravity CLI, GitHub Copilot CLI, Qwen Code, OpenCode, Aider, Crush, 9Router, FreeLLMAPI, free-claude-code, LiteLLM, OpenRouter, NVIDIA NIM, Gemini hoặc các provider/router khác, hãy mở issue hoặc pull request để bổ sung kinh nghiệm.
 
 Những đóng góp hữu ích nhất:
 
@@ -46,6 +48,8 @@ flowchart LR
     Aider["Aider"]
     Crush["Crush"]
     Codex["Codex CLI"]
+    AGY["Antigravity CLI"]
+    Copilot["GitHub Copilot CLI"]
   end
 
   subgraph Proxy["Router / Proxy Layer"]
@@ -55,6 +59,7 @@ flowchart LR
     NIM["NVIDIA NIM"]
     Gemini["Google Gemini"]
     Resp["Responses API Adapter"]
+    Local["LM Studio / Ollama / vLLM<br/>Local OpenAI-compatible"]
   end
 
   Claude --> FCC
@@ -72,6 +77,9 @@ flowchart LR
   FCC --> OR
   Codex -. "Needs Responses API" .-> Resp
   Resp -. "May translate to chat-completions" .-> FLA
+  AGY --> Gemini
+  Copilot --> Local
+  Copilot --> OR
 ```
 
 ## Chọn Nhanh
@@ -83,6 +91,9 @@ flowchart LR
 | Smoke test NVIDIA NIM trực tiếp | Qwen Code + NVIDIA NIM | Qwen Code hỗ trợ trực tiếp `--openai-base-url`. |
 | Workflow ưu tiên OpenRouter | OpenCode hoặc Aider + OpenRouter | Cả hai hợp với provider OpenAI-compatible. |
 | Codex CLI custom providers | Chỉ dùng provider/adapter có Responses API | Codex CLI bản mới thường ưu tiên `/v1/responses`; router chỉ có chat-completions có thể fail. |
+| Terminal agent Google mới | Antigravity CLI | Google đang chuyển hướng người dùng Gemini CLI cá nhân/free sang Antigravity CLI. |
+| Copilot terminal agent mới | GitHub Copilot CLI mới (`@github/copilot`) | Khác với `gh-copilot`/GitHub Next CLI cũ; có agent workflow, MCP/plugins/skills và hỗ trợ BYOK/local models. |
+| Combo local đã test | LM Studio + Open WebUI + Qwen3-14B Q5_K_M + Codex/CLI | Dùng tốt để học local LLM và code prompt; web search trong Open WebUI phải bật theo từng lượt. |
 
 ## Bảo Mật Trước
 
@@ -123,6 +134,8 @@ Get-Command py -ErrorAction SilentlyContinue
 Get-Command python -ErrorAction SilentlyContinue
 Get-Command aider -ErrorAction SilentlyContinue
 Get-Command claude -ErrorAction SilentlyContinue
+Get-Command agy -ErrorAction SilentlyContinue
+Get-Command copilot -ErrorAction SilentlyContinue
 ```
 
 Kiểm tra version:
@@ -135,6 +148,8 @@ py --version
 py -m pip --version
 aider --version
 claude --version
+agy --version
+copilot --version
 ```
 
 Nếu `python` không có nhưng `py` có, dùng `py -m pip ...` thay cho `pip ...` trên Windows. Nếu `aider --version` báo không tìm thấy, nghĩa là Aider chưa được cài hoặc thư mục script của Python chưa nằm trong `PATH`.
@@ -270,7 +285,102 @@ Invoke-WebRequest `
 
 Với smoke test router, tiêu chí chính là HTTP `200` và header `X-Routed-Via` cho biết provider/model đã serve request. Nội dung có thể không đúng chính xác `OK` nếu router chọn model reasoning hoặc model free đang bị fallback.
 
-## 4. Qwen Code
+## 4. Antigravity CLI
+
+Google đã công bố Antigravity CLI như terminal-first surface mới cho Antigravity agents. Theo thông báo chuyển đổi của Google, Gemini CLI và Gemini Code Assist IDE extensions cho người dùng Google AI Pro/Ultra và người dùng free cá nhân sẽ ngừng serve requests từ ngày 2026-06-18. Vì vậy guide này không khuyến nghị bắt đầu workflow mới trên Gemini CLI cá nhân/free; hãy chuyển sang Antigravity CLI.
+
+Install trên Windows PowerShell:
+
+```powershell
+irm https://antigravity.google/cli/install.ps1 | iex
+```
+
+Install trên macOS/Linux:
+
+```bash
+curl -fsSL https://antigravity.google/cli/install.sh | bash
+```
+
+Chạy lần đầu:
+
+```powershell
+agy
+```
+
+Nếu bạn đã dùng Gemini CLI trước đó, Antigravity CLI có migration path cho extensions/plugins:
+
+```powershell
+agy plugin import gemini
+```
+
+Ghi chú cấu hình:
+
+- Settings của Antigravity CLI nằm trong `~/.gemini/antigravity-cli/settings.json`.
+- MCP servers dùng file `mcp_config.json`; remote MCP dùng field `serverUrl` thay vì `url`.
+- Antigravity CLI đọc context/rules từ `GEMINI.md` và `AGENTS.md`, nên repo cũ có thể giữ file hướng dẫn agent.
+- Đây là hướng đi nên test thay cho Gemini CLI path cũ, đặc biệt nếu cần subagents, skills, plugins và MCP.
+
+## 5. GitHub Copilot CLI mới
+
+Không nhầm GitHub Copilot CLI mới với các đường cũ:
+
+- `@githubnext/github-copilot-cli`: GitHub Next technical preview cũ, không nên dùng cho workflow mới.
+- `gh-copilot` extension / `gh copilot explain|suggest`: extension cũ đã được GitHub thông báo deprecate, thay bằng Copilot CLI agentic mới.
+- `@github/copilot`: package hiện tại cho GitHub Copilot CLI mới.
+
+Install trên Windows:
+
+```powershell
+winget install GitHub.Copilot
+```
+
+Hoặc dùng npm nếu đã có Node.js 22+:
+
+```powershell
+npm install -g @github/copilot
+```
+
+Chạy lần đầu:
+
+```powershell
+copilot
+```
+
+Trong CLI:
+
+```text
+/login
+/init
+/model
+/diff
+/review
+```
+
+Điểm đáng chú ý cho repo này: GitHub công bố Copilot CLI hỗ trợ BYOK và local models. Có thể cấu hình Azure OpenAI, Anthropic hoặc OpenAI-compatible endpoint, gồm cả local models như Ollama, vLLM, Foundry Local. Model cần hỗ trợ tool calling và streaming; GitHub khuyến nghị context lớn cho kết quả tốt.
+
+Với combo local đã test ở máy Windows này, hướng thử hợp lý là:
+
+```powershell
+$env:COPILOT_PROVIDER_BASE_URL="http://127.0.0.1:1234/v1"
+$env:COPILOT_PROVIDER_TYPE="openai"
+$env:COPILOT_PROVIDER_API_KEY="lm-studio"
+$env:COPILOT_MODEL="qwen3-14b-q5"
+copilot
+```
+
+Chạy lệnh này để xem cấu hình provider hiện tại:
+
+```powershell
+copilot help providers
+```
+
+Ghi chú thực dụng:
+
+- Nếu bạn chỉ cần command suggestion đơn giản, extension cũ có thể từng đủ dùng, nhưng workflow agentic mới nên dùng `copilot`.
+- Nếu cần local/offline hoặc tự kiểm soát chi phí model, ưu tiên test BYOK/local model thay vì phụ thuộc hoàn toàn GitHub-hosted routing.
+- Nếu tổ chức/tài khoản chặn Copilot CLI policy, CLI sẽ không chạy dù bạn cài đúng.
+
+## 6. Qwen Code
 
 NVIDIA NIM trực tiếp:
 
@@ -300,7 +410,7 @@ npx --yes @qwen-code/qwen-code `
 
 Ghi chú test thực tế: Qwen Code `0.16.0` gửi `messages[].content` dạng OpenAI content-parts array. FreeLLMAPI hiện chỉ nhận string content trong `/v1/chat/completions`, nên đường `Qwen Code -> FreeLLMAPI` có thể fail với `400 Invalid request: Invalid input`. Đường `Qwen Code -> NVIDIA NIM direct` đã smoke test OK với model `qwen/qwen3-coder-480b-a35b-instruct`.
 
-## 5. OpenCode
+## 7. OpenCode
 
 OpenCode dùng model id theo provider đã cấu hình. Nếu dùng FreeLLMAPI local, thêm provider vào `C:\Users\ADMIN\.config\opencode\opencode.json`:
 
@@ -353,7 +463,7 @@ npx --yes opencode-ai run `
 
 Ghi chú test thực tế: model free của OpenRouter có thể trả `429 rate-limited`. Với FreeLLMAPI, tránh `auto` khi cần smoke test ổn định; dùng model cụ thể như `freellmapi/gemini-2.5-flash`.
 
-## 6. Aider
+## 8. Aider
 
 Cài thật trên Windows. Nếu máy có Python 3.12, dùng `uv` để tránh pip chọn bản Aider cũ trên Python 3.14:
 
@@ -395,7 +505,7 @@ aider --model openai/auto
 
 Ghi chú: FreeLLMAPI phải đang chạy ở `http://127.0.0.1:3001` và unified key phải được tạo trong dashboard trước. OpenRouter cần key thật có quyền gọi model đã chọn; model free có thể bị rate limit hoặc timeout. Aider qua FreeLLMAPI đã smoke test OK với `openai/auto`.
 
-## 7. Crush
+## 9. Crush
 
 Repository/package: <https://github.com/charmbracelet/crush>
 
@@ -407,7 +517,7 @@ Crush hữu ích khi bạn muốn terminal UI đẹp và setup nhiều provider.
 
 Ghi chú test thực tế: trỏ Crush vào FreeLLMAPI bằng `OPENAI_API_KEY` và `OPENAI_API_ENDPOINT=http://127.0.0.1:3001/v1` chưa chạy được vì Crush gọi `/v1/responses`, còn FreeLLMAPI hiện chỉ expose `/v1/chat/completions`. Cần provider có Responses API hoặc adapter Responses -> chat-completions.
 
-## 8. Codex CLI Notes
+## 10. Codex CLI Notes
 
 Các bản Codex CLI gần đây có thể nhận custom provider, nhưng nhiều build ưu tiên OpenAI Responses API:
 
@@ -433,6 +543,72 @@ Dùng Codex với:
 - Native OpenAI/Codex login.
 - Provider/router có hỗ trợ Responses API.
 - Protocol adapter dịch Responses API sang chat-completions.
+
+## 11. Combo Local Đã Test: LM Studio + Open WebUI + Qwen3
+
+Mục tiêu combo này không phải thay ChatGPT realtime, mà là hiểu cách dựng local core để code/chat riêng tư hơn, giảm phụ thuộc cloud và kiểm soát chi phí.
+
+Stack đã test trên Windows:
+
+| Thành Phần | Vai Trò | Ghi Chú Thực Tế |
+| --- | --- | --- |
+| LM Studio | Chạy model local và expose OpenAI-compatible API | Endpoint `http://127.0.0.1:1234/v1`. |
+| Qwen3-14B Q5_K_M | Model local coding/chat | Chạy được trên máy 32GB RAM / 12GB VRAM, nhưng chưa thật mượt; Q4_K_M có thể nhẹ hơn. |
+| Open WebUI | Giao diện web cho local model | Chạy bằng Docker ở `http://127.0.0.1:3000`. |
+| Docker Desktop | Chạy Open WebUI container | Không bắt buộc cho LM Studio, nhưng tiện để chạy WebUI gọn. |
+| Codex/CLI | Dùng cho code workflow thật | WebUI hợp chat; code workflow nên để CLI/agent sửa file và chạy test. |
+
+Start script mẫu:
+
+```powershell
+& "C:\Users\ADMIN\Desktop\start-local-ai-stack.ps1"
+```
+
+Kiểm tra LM Studio API:
+
+```powershell
+Invoke-RestMethod -Uri "http://127.0.0.1:1234/v1/models" | ConvertTo-Json -Depth 5
+```
+
+Prompt nhanh với Qwen3:
+
+```text
+/no_think viết hàm JavaScript tính tổng mảng số, kèm ví dụ ngắn
+```
+
+Lưu ý quan trọng về realtime/web search:
+
+- Model local không tự biết giá vàng, thời tiết, tin mới.
+- Trong Open WebUI, `ENABLE_WEB_SEARCH=true` chỉ bật khả năng có toggle Web Search; mỗi lượt chat vẫn phải bật nút Web Search/Tools trong UI.
+- Nếu database chat lưu `features=None`, lượt chat đó không hề chạy web search dù prompt có chữ "hôm nay".
+- DuckDuckGo trong container có thể search được, nhưng pipeline chỉ chạy khi request có `features.web_search=true`.
+- Qwen3 có thinking mode; dùng `/no_think` cho câu hỏi nhanh hoặc câu code ngắn.
+
+File script đang dùng nên giữ các điểm này:
+
+```powershell
+$lms = "$env:LOCALAPPDATA\Programs\LM Studio\resources\app\.webpack\lms.exe"
+& $lms load qwen3-14b --gpu max -c 4096 --parallel 1 --identifier qwen3-14b-q5 -y
+
+docker run -d --name open-webui --restart unless-stopped `
+  -p 3000:8080 `
+  --add-host=host.docker.internal:host-gateway `
+  -e WEBUI_AUTH=false `
+  -e ENABLE_OLLAMA_API=false `
+  -e ENABLE_OPENAI_API=true `
+  -e OPENAI_API_BASE_URL=http://host.docker.internal:1234/v1 `
+  -e OPENAI_API_KEY=lm-studio `
+  -e TASK_MODEL_EXTERNAL=qwen3-14b-q5 `
+  -e ENABLE_WEB_SEARCH=true `
+  -e WEB_SEARCH_ENGINE=duckduckgo `
+  -e WEB_SEARCH_RESULT_COUNT=3 `
+  -e BYPASS_WEB_SEARCH_EMBEDDING_AND_RETRIEVAL=true `
+  -e WEB_LOADER_CONCURRENT_REQUESTS=2 `
+  -v open-webui:/app/backend/data `
+  ghcr.io/open-webui/open-webui:main
+```
+
+Kết luận sau test: combo này chạy được để học local LLM và code prompt, nhưng chưa mượt như cloud agent. Nếu ưu tiên code, dùng Codex/Copilot/Antigravity CLI cho file edits và test; giữ Open WebUI làm giao diện chat/local model.
 
 ## Công Thức Benchmark
 
@@ -475,6 +651,17 @@ Chấm điểm mỗi lần chạy:
 - OpenCode: <https://www.npmjs.com/package/opencode-ai>
 - Crush: <https://github.com/charmbracelet/crush>
 - Aider: <https://aider.chat>
+- Antigravity CLI docs: <https://www.antigravity.google/docs/cli-getting-started>
+- Antigravity CLI migration from Gemini CLI: <https://antigravity.google/docs/gcli-migration>
+- Google Developers Blog, Gemini CLI to Antigravity CLI transition: <https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/>
+- GitHub Copilot CLI docs: <https://docs.github.com/en/copilot/how-tos/copilot-cli/cli-getting-started>
+- GitHub Copilot CLI install docs: <https://docs.github.com/en/copilot/how-tos/copilot-cli/install-copilot-cli>
+- GitHub Copilot CLI GA: <https://github.blog/changelog/2026-02-25-github-copilot-cli-is-now-generally-available/>
+- GitHub Copilot CLI BYOK/local models: <https://github.blog/changelog/2026-04-07-copilot-cli-now-supports-byok-and-local-models/>
+- GitHub Copilot CLI BYOK docs: <https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/use-byok-models>
+- Deprecation of `gh-copilot` extension: <https://github.blog/changelog/2025-09-25-upcoming-deprecation-of-gh-copilot-cli-extension/>
+- LM Studio: <https://lmstudio.ai>
+- Open WebUI: <https://docs.openwebui.com>
 
 ## Lưu Ý
 

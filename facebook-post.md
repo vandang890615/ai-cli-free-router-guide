@@ -1,51 +1,53 @@
 # Bài Đăng Facebook
 
-Mình vừa dùng Codex để hỗ trợ test và tạo một guide cho anh em dev muốn thử các AI coding CLI với free-tier token:
+Mình vừa cập nhật lại guide test AI coding CLI/router sau khi tự dựng và test thêm combo local trên máy Windows:
 
 Repo: https://github.com/vandang890615/ai-cli-free-router-guide
 
-Nội dung chính:
+Nội dung mới đáng chú ý:
 
-- Claude Code + free-claude-code để route qua NVIDIA NIM, OpenRouter hoặc local model
-- FreeLLMAPI để gom Google Gemini, NVIDIA, OpenRouter, GitHub Models... vào một endpoint OpenAI-compatible
-- Aider và OpenCode đã test được qua FreeLLMAPI khi cấu hình đúng model/provider
-- Qwen Code test ổn nhất khi đi thẳng NVIDIA NIM; đường Qwen Code qua FreeLLMAPI còn vướng schema request
-- Crush hiện cần provider/adapter có Responses API nếu muốn dùng kiểu OpenAI-compatible mới
-- Lưu ý riêng cho Codex CLI: bản mới thường cần Responses API, không phải router nào có `/v1/chat/completions` cũng dùng trực tiếp được
-- Checklist bảo mật API key: không paste key vào chat, README, issue, log hay screenshot
+- Thêm Antigravity CLI: hướng đi mới thay cho Gemini CLI cá nhân/free theo thông báo chuyển đổi của Google.
+- Thêm GitHub Copilot CLI mới: dùng `@github/copilot` hoặc `winget install GitHub.Copilot`, khác với `gh-copilot`/GitHub Next CLI cũ.
+- Ghi rõ nên ngưng bắt đầu workflow mới bằng Gemini CLI cá nhân/free và Copilot CLI/extension cũ.
+- Thêm combo local đã test: LM Studio + Qwen3-14B Q5_K_M + Open WebUI + Docker + Codex/CLI.
+- Ghi rõ giới hạn thực tế: Open WebUI không tự web search realtime nếu lượt chat không bật Web Search; Qwen3 cần `/no_think` nếu muốn nhanh.
+- Bổ sung bài viết dài: "Thời của crack đã chết: Kỷ nguyên của API, open source và tư duy đòn bẩy hệ thống".
 
-Lý do mình viết:
+Stack mình thấy đáng test nhất hiện tại:
 
-Rất nhiều tool CLI coding hiện nay rất mạnh, nhưng khi test nhiều model/provider thì cần hiểu rõ billing, quota và giới hạn sử dụng. Cách hợp lý hơn cho mục đích học tập và thử nghiệm cá nhân là tách CLI ra khỏi provider, dùng router/proxy local để đổi provider tùy quota, model, tốc độ và khả năng tool-calling.
+1. Antigravity CLI cho hệ sinh thái Google/Gemini mới.
+2. GitHub Copilot CLI mới nếu có Copilot subscription hoặc muốn thử BYOK/local model.
+3. Codex/Claude Code cho workflow sửa code, chạy test, review diff nghiêm túc.
+4. FreeLLMAPI cho các CLI hỗ trợ OpenAI-compatible `/v1/chat/completions`.
+5. LM Studio + Open WebUI để học local LLM, test model, và chạy chat local.
+6. Aider/OpenCode nếu muốn đường OpenAI-compatible đơn giản, dễ smoke test.
 
-Stack mình thấy đáng test nhất:
+Kết quả test thực tế trên máy Windows:
 
-1. Claude Code + free-claude-code cho workflow Claude-style
-2. FreeLLMAPI cho các CLI hỗ trợ OpenAI-compatible endpoint
-3. Qwen Code + NVIDIA NIM để test trực tiếp model coding free-tier
-4. Aider + FreeLLMAPI cho smoke test OpenAI-compatible đơn giản
-5. OpenCode + FreeLLMAPI nếu khai báo provider/model trong `opencode.json`
+- LM Studio chạy được Qwen3-14B Q5_K_M qua `http://127.0.0.1:1234/v1`.
+- Open WebUI chạy Docker ở `http://127.0.0.1:3000`.
+- Qwen3 tool calling cơ bản chạy được qua LM Studio API.
+- Code prompt đơn giản qua local CLI phản hồi được khoảng vài giây, nhưng chưa mượt như cloud agent.
+- Web search trong Open WebUI chỉ chạy khi request có `features.web_search=true`; gõ "hôm nay" không tự biến model local thành realtime search.
+- FreeLLMAPI, Aider, Qwen Code, OpenCode vẫn giữ phần test/caveat cũ để ai cần router free-tier có chỗ đối chiếu.
 
-Guide có kèm diagram, file `.env.example`, bảng so sánh, các lệnh PowerShell và phần lỗi thường gặp. Đây là kết quả test nhanh trên máy Windows thực tế, không phải benchmark chuẩn công nghiệp. Một số đường đã pass thật, một số đường được ghi rõ là chưa tương thích hoặc bị rate limit.
+Quan điểm chính của bài viết mới:
 
-Kết quả test đáng chú ý:
+Thời của crack đã chết. Crack là tư duy tiết kiệm ngắn hạn nhưng rủi ro dài hạn: malware, mất source code, mất tài khoản, mất dữ liệu, đứng yên ở bản cũ. Thời mới là API, open source, local LLM, cloud agent và tư duy hybrid:
 
-- FreeLLMAPI chạy được với key Google/OpenRouter/NVIDIA healthy.
-- Aider `0.86.2` qua FreeLLMAPI trả được `OK`.
-- Qwen Code `0.16.0` đi thẳng NVIDIA NIM trả được `OK`.
-- OpenCode `1.15.10` chạy được qua FreeLLMAPI sau khi thêm provider `freellmapi/gemini-2.5-flash`.
-- OpenRouter free model có thể bị `429 rate-limited`, nên không nên lấy một model free làm chuẩn duy nhất.
-- Qwen Code qua FreeLLMAPI hiện fail vì gửi `messages[].content` dạng content-parts array, trong khi router đang nhận string content.
-- Crush trỏ vào FreeLLMAPI chưa chạy vì nó gọi `/v1/responses`, còn FreeLLMAPI expose `/v1/chat/completions`.
+- Local core: giữ dữ liệu, script, workflow riêng, model local và router private.
+- Cloud API: chỉ gọi khi cần model mạnh, context lớn, reasoning tốt hoặc integration chính thức.
+- Open source: clone, test, tùy biến, đóng gói thành tài sản.
+- API: lắp ghép dịch vụ để tạo workflow và sản phẩm nhanh hơn.
 
-Mình muốn repo này thành tài liệu cộng đồng. Nếu anh em đã từng test các tool/provider/router mà bài viết chưa có, hoặc có kinh nghiệm hay hơn, hãy fork, mở issue hoặc gửi pull request.
+Điểm quan trọng không phải là dùng thật nhiều tool. Điểm quan trọng là biết biến tool thành đòn bẩy hệ thống: tự động hóa việc lặp lại, giảm giờ công, đóng gói thành SaaS nhỏ, script nội bộ, workflow chuyển đổi số hoặc sản phẩm bán được.
 
-Mình đặc biệt muốn nhận thêm:
+Repo vẫn giữ tinh thần responsible use:
 
-- Cấu hình đã chạy thật với OpenRouter, NVIDIA NIM, Gemini, local model
-- Model nào tool-calling ổn định cho coding agent
-- Lỗi thường gặp khi dùng Codex CLI, Claude Code, Qwen Code, OpenCode, Aider, Crush
-- Router/proxy hay hơn như 9Router, LiteLLM, CLIProxyAPI, custom adapter
-- Benchmark trên repo thực tế
+- Không né billing, không vượt rate limit, không tạo nhiều tài khoản để lạm dụng free tier.
+- Không public local proxy.
+- Không commit API key.
+- Không paste key vào chat, README, issue, log hoặc screenshot.
+- Khi nhập key vào dashboard/router, chỉ dán raw key như `sk-or-v1-...`, `nvapi-...`, `AIza...`, không dán cả lệnh PowerShell.
 
-Quan trọng: bài này không khuyến khích né billing, vượt rate limit, tạo nhiều tài khoản để lạm dụng free tier, share key hay public proxy. Dùng free tier thì nên đọc ToS từng provider, chỉ chạy local/private, không dùng như production backend và không commit API key. Khi nhập key vào router/dashboard, chỉ dán raw key như `sk-or-v1-...`, `nvapi-...`, `AIza...`, không dán cả lệnh PowerShell kiểu `$env:OPENROUTER_API_KEY="..."`.
+Nếu anh em đã test Antigravity CLI, Copilot CLI mới, Codex, Claude Code, Qwen Code, OpenCode, Aider, LM Studio, Open WebUI, LiteLLM, 9Router hoặc router khác, có config chạy thật thì mở issue/PR để bổ sung.
