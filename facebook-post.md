@@ -10,6 +10,7 @@ Nội dung mới đáng chú ý:
 - Thêm GitHub Copilot CLI mới: dùng `@github/copilot` hoặc `winget install GitHub.Copilot`, khác với `gh-copilot`/GitHub Next CLI cũ.
 - Ghi rõ nên ngưng bắt đầu workflow mới bằng Gemini CLI cá nhân/free và Copilot CLI/extension cũ.
 - Cập nhật combo local đã test: LM Studio + Qwen3-14B Q5_K_M là lõi chính; Open WebUI/Docker chỉ bật khi cần giao diện chat.
+- Bổ sung Hermes Agent chạy local qua LM Studio, không dùng NVIDIA NIM: provider `custom`, base URL `http://127.0.0.1:1234/v1`, model `qwen3-14b-q5`.
 - Ghi rõ giới hạn thực tế: Open WebUI không tự web search realtime nếu lượt chat không bật Web Search; Qwen3 cần `/no_think` nếu muốn nhanh.
 - Bổ sung test code thật với Aider và OpenCode gọi thẳng LM Studio local.
 - Thêm cảnh báo lỗi chạy nhầm Aider trong `C:\Windows\System32` làm tạo nhầm `.git`.
@@ -25,7 +26,7 @@ Stack mình thấy đáng test nhất hiện tại:
 3. Codex/Claude Code cho workflow sửa code, chạy test, review diff nghiêm túc.
 4. FreeLLMAPI cho các CLI hỗ trợ OpenAI-compatible `/v1/chat/completions`.
 5. LM Studio + Qwen3-14B Q5_K_M để làm local core.
-6. Open WebUI chỉ bật khi cần chat UI; Aider/OpenCode chỉ dùng để benchmark code nhỏ với model local.
+6. Hermes Agent/Aider/OpenCode để benchmark CLI local; Open WebUI chỉ bật khi cần chat UI.
 
 Kết quả test thực tế trên máy Windows:
 
@@ -34,7 +35,9 @@ Kết quả test thực tế trên máy Windows:
 - Qwen3 tool calling cơ bản chạy được qua LM Studio API.
 - Aider gọi `openai/qwen3-14b-q5` qua LM Studio, sửa file và chạy `npm test` pass `7/7`.
 - OpenCode gọi `lmstudio-local/qwen3-14b-q5`, sửa file và chạy `npm test` pass `7/7`.
+- Hermes Agent gọi `qwen3-14b-q5` qua LM Studio local và trả đúng smoke test `OK`.
 - OpenCode cần context LM Studio đủ lớn; test thực tế phải tăng lên khoảng `-c 12288` để tránh lỗi `n_keep >= n_ctx`.
+- Hermes Agent cần giảm toolset hoặc tăng context model; nếu bật quá nhiều tool, prompt đầu vào có thể vượt context thật của model local.
 - Code prompt đơn giản qua local CLI chạy được, nhưng chưa mượt như cloud agent.
 - Web search trong Open WebUI chỉ chạy khi request có `features.web_search=true`; gõ "hôm nay" không tự biến model local thành realtime search.
 - Nếu Docker Desktop chưa chạy, Open WebUI mất port `3000`; khi Docker lên lại, container có thể healthy trở lại.
@@ -49,7 +52,7 @@ Bài học thực dụng sau khi test:
 - CLI dùng để code thật: đọc repo, sửa file, chạy test, xem diff.
 - Docker chỉ cần cho Open WebUI; LM Studio tự chạy model và API local, không cần Docker.
 - Terminal phải đứng trong thư mục project thật trước khi gọi Aider/OpenCode. Đừng chạy từ `C:\Windows\System32`.
-- Với máy 32GB RAM / 12GB VRAM, local stack nên chạy lean mode trước: LM Studio + Qwen, tắt OpenClaw, chỉ bật WebUI khi cần.
+- Với máy 32GB RAM / 12GB VRAM, local stack nên chạy lean mode trước: LM Studio + Qwen, tắt OpenClaw, giảm toolset Hermes, chỉ bật WebUI khi cần.
 
 Quan điểm chính của bài viết mới:
 
@@ -70,4 +73,4 @@ Repo vẫn giữ tinh thần responsible use:
 - Không paste key vào chat, README, issue, log hoặc screenshot.
 - Khi nhập key vào dashboard/router, chỉ dán raw key như `sk-or-v1-...`, `nvapi-...`, `AIza...`, không dán cả lệnh PowerShell.
 
-Nếu anh em đã test Antigravity CLI, Copilot CLI mới, Codex, Claude Code, Qwen Code, OpenCode, Aider, LM Studio, Open WebUI, LiteLLM, 9Router hoặc router khác, có config chạy thật thì mở issue/PR để bổ sung.
+Nếu anh em đã test Antigravity CLI, Copilot CLI mới, Codex, Claude Code, Qwen Code, OpenCode, Aider, Hermes Agent, LM Studio, Open WebUI, LiteLLM, 9Router hoặc router khác, có config chạy thật thì mở issue/PR để bổ sung.

@@ -93,7 +93,7 @@ flowchart LR
 | Codex CLI custom providers | Chỉ dùng provider/adapter có Responses API | Codex CLI bản mới thường ưu tiên `/v1/responses`; router chỉ có chat-completions có thể fail. |
 | Terminal agent Google mới | Antigravity CLI | Google đang chuyển hướng người dùng Gemini CLI cá nhân/free sang Antigravity CLI. |
 | Copilot terminal agent mới | GitHub Copilot CLI mới (`@github/copilot`) | Khác với `gh-copilot`/GitHub Next CLI cũ; có agent workflow, MCP/plugins/skills và hỗ trợ BYOK/local models. |
-| Combo local đã test | LM Studio + Qwen3-14B Q5_K_M + Aider/OpenCode; Open WebUI tùy chọn | Qwen là model local ổn nhất trong đợt test. WebUI chỉ nên bật khi cần giao diện chat; local model không thay được web search realtime. |
+| Combo local đã test | LM Studio + Qwen3-14B Q5_K_M + Aider/OpenCode/Hermes Agent; Open WebUI tùy chọn | Qwen là model local ổn nhất trong đợt test. Hermes chạy được khi trỏ vào LM Studio và giảm toolset; WebUI chỉ nên bật khi cần giao diện chat. |
 
 ## Bảo Mật Trước
 
@@ -557,7 +557,7 @@ Stack đã test trên Windows:
 | Unsloth Gemma 4 31B IQ2 | Model phụ để thử chat/Aider | API và Aider smoke test OK, nhưng OpenCode fail vì prompt template/tool calling trong LM Studio. |
 | Open WebUI | Giao diện web cho local model | Chạy bằng Docker ở `http://127.0.0.1:3000`; bật khi cần chat UI, không nên coi là trung tâm coding workflow. |
 | Docker Desktop | Chạy Open WebUI container | Không bắt buộc cho LM Studio. Nếu Docker daemon tắt, WebUI sẽ mất port `3000` hoặc báo lỗi. |
-| Aider/OpenCode | CLI local để smoke test code | Chạy được với Qwen nhưng chậm hơn cloud agent; chỉ nên dùng prompt code rõ ràng, không hỏi realtime/news. |
+| Aider/OpenCode/Hermes Agent | CLI local để smoke test code/agent | Chạy được với Qwen nhưng chậm hơn cloud agent; chỉ nên dùng prompt code rõ ràng, không hỏi realtime/news. |
 | OpenClaw | Đã thử nhưng không khuyến nghị làm hướng chính | Bản test `2026.2.9` cũ, gateway/token dễ lỗi, config có nguy cơ lộ API key nếu chia sẻ. |
 
 Start script nhẹ nhất, chỉ LM Studio + Qwen và tắt OpenClaw:
@@ -705,7 +705,60 @@ Lưu ý quan trọng:
 - Lần đầu OpenCode có thể fail kiểu `n_keep >= n_ctx` nếu context LM Studio quá thấp. Tăng context khi load model, ví dụ `-c 12288`.
 - OpenCode dùng tool/function schema nhiều hơn Aider, nên kén prompt template hơn. Qwen chạy được; Unsloth Gemma 4 IQ2 fail với lỗi Jinja template khi request có `tools`.
 
-### 11.3. Helper Script Trên Desktop
+### 11.3. Dùng Hermes Agent Với LM Studio Local
+
+Hermes Agent cài được trên Windows native bằng installer chính thức, nhưng nếu chưa có provider cloud thì cần trỏ sang endpoint OpenAI-compatible local. Trong test thực tế, đường chạy được là Hermes + LM Studio `http://127.0.0.1:1234/v1` + `qwen3-14b-q5`.
+
+Cài Hermes:
+
+```powershell
+iex (irm https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.ps1)
+```
+
+Config Hermes nằm ở:
+
+```text
+C:\Users\ADMIN\AppData\Local\hermes\config.yaml
+```
+
+Cấu hình local đã test:
+
+```yaml
+model:
+  default: qwen3-14b-q5
+  provider: custom
+  base_url: http://127.0.0.1:1234/v1
+  api_mode: chat_completions
+  context_length: 64000
+```
+
+Hermes yêu cầu context tối thiểu 64k ở tầng config, nhưng LM Studio đang load Qwen với context thật `12288`. Vì vậy cần giảm prompt/tool schema bằng cách tắt các toolset nặng:
+
+```powershell
+$env:HERMES_HOME="$env:LOCALAPPDATA\hermes"
+hermes tools disable --platform cli browser clarify code_execution computer_use cronjob delegation image_gen messaging session_search skills todo tts vision web
+```
+
+Sau đó smoke test:
+
+```powershell
+hermes chat -q "Reply with exactly OK."
+```
+
+Kết quả thực tế:
+
+```text
+OK
+```
+
+Ghi chú:
+
+- Không cần NVIDIA NIM cho đường này; `.env` không cần `NVIDIA_API_KEY`.
+- Nếu Hermes báo `n_keep >= n_ctx`, tăng context khi load model trong LM Studio, ví dụ `-c 16384` hoặc `-c 32768`.
+- Nếu bật nhiều toolset lại, prompt đầu vào sẽ lớn hơn và model local 12k có thể fail. Muốn dùng Hermes như agent đầy đủ, nên dùng model/context lớn hơn.
+- `gemma-4-31b-it` có context lớn hơn trong LM Studio nhưng test Hermes fail vì lỗi Jinja prompt template, nên không chọn làm hướng chính.
+
+### 11.4. Helper Script Trên Desktop
 
 Để không phải nhớ lệnh dài, dùng PowerShell script:
 
@@ -723,7 +776,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -NoExit -File "%USERPROFILE%\D
 
 Script nên tự `Set-Location` vào project thật trước khi gọi CLI. Điều này tránh lỗi tạo nhầm Git repo trong `C:\Windows\System32`.
 
-### 11.4. Thử Gemma 4 31B GGUF
+### 11.5. Thử Gemma 4 31B GGUF
 
 Đã thử hai hướng Gemma:
 
@@ -810,6 +863,7 @@ Chấm điểm mỗi lần chạy:
 | Google key xuất hiện trong URL logs | Gemini API key được truyền qua query string | Không chia sẻ log; rotate key đã lộ. |
 | Aider tạo Git repo trong `C:\Windows\System32` | Chạy `aider` khi terminal đang ở System32 | Đóng Aider, mở PowerShell trong thư mục project thật rồi chạy lại; nếu cần, xóa riêng `C:\Windows\System32\.git` bằng quyền Administrator sau khi kiểm tra đúng path. |
 | OpenCode báo `n_keep >= n_ctx` | Context LM Studio quá thấp so với prompt/tool schema của CLI | Load model với context lớn hơn, ví dụ `-c 12288`. |
+| Hermes báo context dưới 64k hoặc `n_keep >= n_ctx` | Hermes prompt/tool schema lớn hơn context thật của model local | Tắt bớt toolset nặng hoặc load model trong LM Studio với context lớn hơn; config test được dùng `context_length: 64000` nhưng Qwen thật đang chạy `12288`. |
 | OpenCode + Gemma báo lỗi Jinja template | Prompt template của model không render được request có `tools` | Dùng Qwen cho OpenCode, hoặc tìm bản `lmstudio-community` có prompt template đã sửa. |
 | Open WebUI connection refused | Docker Desktop chưa chạy hoặc container chưa healthy | Start Docker Desktop, kiểm tra `docker ps`, chờ `open-webui` healthy. |
 | OpenClaw canvas báo disconnected/token missing | Gateway cần token hoặc lock cũ | Dán gateway token vào Control UI settings; nếu vẫn lỗi, stop gateway/scheduled task rồi start lại. |
